@@ -8,13 +8,66 @@ datasource db {
 }
 
 model User {
+  id          String           @id @default(cuid())
+  username    String           @unique
+  email       String           @unique
+  password    String
+  avatar      String?
+  level       Int              @default(1)
+  xp          Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  connections UserConnection[]
+  queueEntry  QueueEntry?
+}
+
+model UserConnection {
+  id              String   @id @default(cuid())
+  userId          String
+  provider        String
+  riotGameName    String?
+  riotTagLine     String?
+  riotRegion      String?
+  riotPuuid       String?
+  discordUsername String?
+  discordUserId   String?
+  accessToken     String?
+  metadata        Json?
+  connected       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+}
+
+model QueueEntry {
   id        String   @id @default(cuid())
-  username  String   @unique
-  email     String   @unique
-  password  String
-  avatar    String?
-  level     Int      @default(1)
-  xp        Int      @default(0)
+  userId    String   @unique
+  game      String
+  filters   Json
+  status    String   @default("searching")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LiveMatch {
+  id               String   @id @default(cuid())
+  player1Id        String
+  player2Id        String
+  player1Accepted  Boolean  @default(false)
+  player2Accepted  Boolean  @default(false)
+  player1Rejected  Boolean  @default(false)
+  player2Rejected  Boolean  @default(false)
+  status           String   @default("pending")
+  game             String
+  filters          Json?
+  discordInviteUrl String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  expiresAt        DateTime
+
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([status])
 }

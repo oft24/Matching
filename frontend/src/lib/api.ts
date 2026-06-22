@@ -1,7 +1,18 @@
 import axios from 'axios';
-import type { AuthResponse, AuthUser, Dashboard, Game, Player, SearchFilters } from '../types';
+import type {
+  AuthResponse,
+  AuthUser,
+  Dashboard,
+  Game,
+  QueueStatus,
+  SearchFilters,
+  UserConnection,
+} from '../types';
 
-const api = axios.create({ baseURL: '/api' });
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  timeout: 15000,
+});
 
 export function setAuthToken(token: string | null) {
   if (token) {
@@ -35,12 +46,58 @@ export async function fetchGames(): Promise<Game[]> {
   return data;
 }
 
-export async function searchPlayers(filters: SearchFilters): Promise<Player[]> {
-  const { data } = await api.post<Player[]>('/matchmaking/search', filters);
-  return data;
-}
-
 export async function fetchDashboard(): Promise<Dashboard> {
   const { data } = await api.get<Dashboard>('/dashboard');
   return data;
+}
+
+export async function joinQueue(game: string, filters: SearchFilters): Promise<QueueStatus> {
+  const { data } = await api.post<QueueStatus>('/queue/join', { game, filters });
+  return data;
+}
+
+export async function leaveQueue(): Promise<void> {
+  await api.delete('/queue/leave');
+}
+
+export async function getQueueStatus(): Promise<QueueStatus> {
+  const { data } = await api.get<QueueStatus>('/queue/status');
+  return data;
+}
+
+export async function acceptMatch(matchId: string): Promise<QueueStatus> {
+  const { data } = await api.post<QueueStatus>(`/queue/matches/${matchId}/accept`);
+  return data;
+}
+
+export async function rejectMatch(matchId: string): Promise<QueueStatus> {
+  const { data } = await api.post<QueueStatus>(`/queue/matches/${matchId}/reject`);
+  return data;
+}
+
+export async function fetchConnections(): Promise<{ connections: UserConnection[] }> {
+  const { data } = await api.get<{ connections: UserConnection[] }>('/connections');
+  return data;
+}
+
+export async function saveRiotConnection(payload: {
+  gameName: string;
+  tagLine: string;
+  region: string;
+  apiKey?: string;
+}): Promise<{ connection: UserConnection; message: string }> {
+  const { data } = await api.put('/connections/riot', payload);
+  return data;
+}
+
+export async function saveDiscordConnection(payload: {
+  username: string;
+  userId?: string;
+}): Promise<{ connection: UserConnection; message: string }> {
+  const { data } = await api.put('/connections/discord', payload);
+  return data;
+}
+
+export async function disconnectProvider(provider: string): Promise<void> {
+  await api.delete(`/connections/${provider}`);
 }

@@ -7,7 +7,8 @@
     "dev": "concurrently -n frontend,backend,python -c cyan,green,yellow \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\" \"npm run dev:python\"",
     "dev:python": "python -m uvicorn app.main:app --reload --port 8001 --app-dir services/python",
     "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend",
-    "db:setup": "npm run db:generate --prefix backend && npm run db:push --prefix backend"
+    "db:setup": "npm run db:generate --prefix backend && npm run db:push --prefix backend",
+    "db:verify": "node backend/scripts/verify-db.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

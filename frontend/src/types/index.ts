@@ -5,29 +5,6 @@ export interface Game {
   short: string;
 }
 
-export interface Player {
-  id: string;
-  username: string;
-  avatar: string;
-  rank: string;
-  roles: string[];
-  languages: string[];
-  region: string;
-  game: string;
-  playstyle: string;
-  objectives: string;
-  activityLevel: string;
-  hasMic: boolean;
-  verified: boolean;
-  reputation: number;
-  badges: string[];
-  lastSeen: string;
-  online: boolean;
-  age: number;
-  availability: string;
-  compatibility?: number;
-}
-
 export interface SearchFilters {
   game: string;
   region: string;
@@ -44,19 +21,45 @@ export interface SearchFilters {
   hasMic: boolean;
 }
 
+export interface MatchOpponent {
+  id: string;
+  username: string;
+  avatar: string;
+  level: number;
+  riot: { gameName: string; tagLine: string; region: string } | null;
+  discord: { username: string } | null;
+}
+
+export interface QueueStatus {
+  status: 'idle' | 'searching' | 'pending' | 'accepted' | 'rejected' | 'expired';
+  matchId?: string;
+  myAccepted?: boolean;
+  opponentAccepted?: boolean;
+  opponent?: MatchOpponent | null;
+  compatibility?: number;
+  discordInviteUrl?: string | null;
+  expiresAt?: string;
+  waitingForOpponent?: boolean;
+}
+
+export interface UserConnection {
+  provider: string;
+  connected: boolean;
+  riotGameName?: string;
+  riotTagLine?: string;
+  riotRegion?: string;
+  discordUsername?: string;
+}
+
 export interface Dashboard {
   level: number;
   xp: number;
   xpToNext: number;
-  friendsOnline: number;
-  pendingInvites: number;
-  matchHistory: { id: string; game: string; result: string; teammates: number; date: string }[];
-  stats: {
-    totalMatches: number;
-    successfulMatches: number;
-    avgCompatibility: number;
-    teammatesFound: number;
-  };
+  riotConnected: boolean;
+  riotAccount: { gameName: string; tagLine: string; region: string } | null;
+  stats: null;
+  matchHistory: [];
+  message: string;
 }
 
 export interface AuthUser {

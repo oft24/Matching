@@ -32,6 +32,7 @@ interface MatchmakingPanelProps {
   onChange: (filters: SearchFilters) => void;
   onSearch: () => void;
   loading: boolean;
+  hideSearchButton?: boolean;
 }
 
 const REGIONS = ['LAN', 'LAS', 'NA', 'EUW', 'BR'];
@@ -45,7 +46,7 @@ const PLAYSTYLES = ['Competitivo', 'Casual competitivo', 'Cooperativo', 'EstratÃ
 const OBJECTIVES = ['Subir de rango', 'DiversiÃ³n en equipo', 'Mejorar habilidades', 'Torneos amateur', 'Ranked grind'];
 const ACTIVITY = ['Bajo', 'Medio', 'Alto'];
 
-export default function MatchmakingPanel({ filters, onChange, onSearch, loading }: MatchmakingPanelProps) {
+export default function MatchmakingPanel({ filters, onChange, onSearch, loading, hideSearchButton }: MatchmakingPanelProps) {
   const update = (key: keyof SearchFilters, value: string | boolean) => {
     onChange({ ...filters, [key]: value });
   };
@@ -120,15 +121,17 @@ export default function MatchmakingPanel({ filters, onChange, onSearch, loading 
             </span>
           </label>
 
-          <button
-            type="button"
-            onClick={onSearch}
-            disabled={loading}
-            className="gradient-btn w-full sm:w-auto px-8 py-3 rounded-2xl text-white font-bold text-sm
-              tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Buscando...' : 'BUSCAR JUGADORES'}
-          </button>
+          {!hideSearchButton && (
+            <button
+              type="button"
+              onClick={onSearch}
+              disabled={loading}
+              className="gradient-btn w-full sm:w-auto px-8 py-3 rounded-2xl text-white font-bold text-sm
+                tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Buscando...' : 'BUSCAR JUGADORES'}
+            </button>
+          )}
         </div>
       </div>
     </section>

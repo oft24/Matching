@@ -1,5 +1,6 @@
 import { LogIn, LogOut, Mail, Shield, Trophy, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import ConnectionSettings from './ConnectionSettings';
 
 interface ProfilePageProps {
   onOpenLogin: () => void;
@@ -79,6 +80,8 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
           <Stat label="Experiencia" value={`${user.xp} XP`} />
           <Stat label="Estado" value="En línea" accent />
         </div>
+
+        <ConnectionSettings />
       </div>
     </section>
   );

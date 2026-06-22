@@ -3,17 +3,16 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import GameGrid from './components/GameGrid';
-import MatchmakingPanel from './components/MatchmakingPanel';
+import LiveMatchmaking from './components/LiveMatchmaking';
 import GuestLanding from './components/GuestLanding';
-import PlayerResults from './components/PlayerResults';
 import DashboardPanel from './components/DashboardPanel';
 import ProfilePage from './components/ProfilePage';
 import LoginModal from './components/LoginModal';
 import QuickSearch, { TrustFooter } from './components/QuickSearch';
 import { useAuth } from './context/AuthContext';
-import { fetchDashboard, fetchGames, searchPlayers } from './lib/api';
+import { fetchDashboard, fetchGames } from './lib/api';
 import { DEFAULT_GAMES } from './data/games';
-import type { Dashboard, Game, Player, SearchFilters } from './types';
+import type { Dashboard, Game, SearchFilters } from './types';
 
 const DEFAULT_FILTERS: SearchFilters = {
   game: 'lol',
@@ -48,10 +47,7 @@ export default function App() {
   const [loginMode, setLoginMode] = useState<'login' | 'register'>('login');
   const [games, setGames] = useState<Game[]>(DEFAULT_GAMES);
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
-  const [players, setPlayers] = useState<Player[]>([]);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
 
   const openLogin = useCallback((mode: 'login' | 'register' = 'login') => {
     setLoginMode(mode);
@@ -68,55 +64,43 @@ export default function App() {
     if (!isAuthenticated) {
       setActiveNav('inicio');
       setDashboard(null);
-      setPlayers([]);
-      setSearched(false);
       return;
     }
     fetchDashboard().then(setDashboard).catch(() => setDashboard(null));
   }, [isAuthenticated, user?.id]);
 
-  const handleSearch = useCallback(async () => {
-    setLoading(true);
-    setSearched(true);
-    try {
-      const results = await searchPlayers(filters);
-      setPlayers(results);
-    } catch {
-      setPlayers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
-
   const handleGameSelect = (id: string) => {
     setFilters((f) => ({ ...f, game: id }));
   };
 
-  const showSearch = activeNav === 'inicio' || activeNav === 'buscar';
+  const showBuscar = activeNav === 'buscar';
   const showDashboard = activeNav === 'dashboard';
   const showProfile = activeNav === 'perfil';
+  const showInicio = activeNav === 'inicio';
 
   const renderAuthenticatedContent = () => {
     if (showProfile) return <ProfilePage onOpenLogin={() => openLogin()} />;
-    if (showDashboard) return <DashboardPanel data={dashboard} onOpenLogin={() => openLogin()} />;
+    if (showDashboard) return <DashboardPanel data={dashboard} />;
     if (activeNav === 'grupos') return <ComingSoon title="Grupos" />;
     if (activeNav === 'amigos') return <ComingSoon title="Amigos" />;
     if (activeNav === 'mensajes') return <ComingSoon title="Mensajes" />;
     if (activeNav === 'eventos') return <ComingSoon title="Eventos" />;
     if (activeNav === 'ajustes') return <ComingSoon title="Ajustes" />;
 
-    if (showSearch) {
+    if (showBuscar) {
+      return (
+        <>
+          <GameGrid games={games} selected={filters.game} onSelect={handleGameSelect} />
+          <LiveMatchmaking filters={filters} onChange={setFilters} />
+        </>
+      );
+    }
+
+    if (showInicio) {
       return (
         <>
           <Hero />
           <GameGrid games={games} selected={filters.game} onSelect={handleGameSelect} />
-          <MatchmakingPanel
-            filters={filters}
-            onChange={setFilters}
-            onSearch={handleSearch}
-            loading={loading}
-          />
-          <PlayerResults players={players} loading={loading} searched={searched} />
           <TrustFooter />
         </>
       );
@@ -150,7 +134,7 @@ export default function App() {
             )}
           </main>
 
-          {isAuthenticated && showSearch && (
+          {isAuthenticated && showBuscar && (
             <div className="p-4 lg:p-6 pr-0 hidden xl:block">
               <QuickSearch filters={filters} />
             </div>
