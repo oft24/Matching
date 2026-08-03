@@ -1,5 +1,6 @@
 import { Mic, MicOff } from 'lucide-react';
 import type { SearchFilters } from '../types';
+import { GAME_RANKS } from '../data/gameRanks';
 
 interface FilterSelectProps {
   label: string;
@@ -20,7 +21,9 @@ function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
           transition-colors cursor-pointer appearance-none"
       >
         {options.map((opt) => (
-          <option key={opt} value={opt} className="bg-brand-dark">{opt}</option>
+          <option key={opt} value={opt} className="bg-brand-dark">
+            {{ any: 'Cualquiera', man: 'Hombres', woman: 'Mujeres' }[opt] ?? opt}
+          </option>
         ))}
       </select>
     </div>
@@ -33,20 +36,20 @@ interface MatchmakingPanelProps {
   onSearch: () => void;
   loading: boolean;
   hideSearchButton?: boolean;
+  disabled?: boolean;
 }
 
 const REGIONS = ['LAN', 'LAS', 'NA', 'EUW', 'BR'];
 const LANGUAGES = ['Español', 'Inglés', 'Portugués', 'Francés'];
 const MATCH_TYPES = ['Ranked', 'Casual', 'Torneo', 'Flex', 'ARAM'];
-const RANKS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master+'];
 const ROLES = ['Any', 'Top', 'Jungle', 'Mid', 'ADC', 'Support', 'Duelist', 'Initiator', 'Controller', 'Sentinel'];
 const AGES = ['16-18', '18-25', '25-30', '30+'];
-const AVAILABILITY = ['Mañanas', 'Tardes', 'Noches', 'Fines de semana', 'Diario'];
 const PLAYSTYLES = ['Competitivo', 'Casual competitivo', 'Cooperativo', 'Estratégico', 'Agresivo'];
 const OBJECTIVES = ['Subir de rango', 'Diversión en equipo', 'Mejorar habilidades', 'Torneos amateur', 'Ranked grind'];
 const ACTIVITY = ['Bajo', 'Medio', 'Alto'];
 
-export default function MatchmakingPanel({ filters, onChange, onSearch, loading, hideSearchButton }: MatchmakingPanelProps) {
+export default function MatchmakingPanel({ filters, onChange, onSearch, loading, hideSearchButton, disabled }: MatchmakingPanelProps) {
+  const ranks = GAME_RANKS[filters.game] ?? ['Sin rango'];
   const update = (key: keyof SearchFilters, value: string | boolean) => {
     onChange({ ...filters, [key]: value });
   };
@@ -56,17 +59,17 @@ export default function MatchmakingPanel({ filters, onChange, onSearch, loading,
       <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
         2. Configura tu búsqueda y matchmaking
       </h3>
-      <div className="glass rounded-2xl p-5 lg:p-6 space-y-6">
+      <div aria-disabled={disabled} className={`glass rounded-2xl p-5 lg:p-6 space-y-6 transition-opacity ${disabled ? 'pointer-events-none select-none opacity-55' : ''}`}>
         <div>
           <p className="text-xs text-slate-500 mb-3 font-medium uppercase tracking-wide">Filtros básicos</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <FilterSelect label="Región" value={filters.region} options={REGIONS} onChange={(v) => update('region', v)} />
             <FilterSelect label="Idioma" value={filters.language} options={LANGUAGES} onChange={(v) => update('language', v)} />
             <FilterSelect label="Tipo de partida" value={filters.matchType} options={MATCH_TYPES} onChange={(v) => update('matchType', v)} />
-            <FilterSelect label="Rango" value={filters.rank} options={RANKS} onChange={(v) => update('rank', v)} />
+            <FilterSelect label="Rango" value={filters.rank} options={ranks} onChange={(v) => update('rank', v)} />
             <FilterSelect label="Rol principal" value={filters.role} options={ROLES} onChange={(v) => update('role', v)} />
             <FilterSelect label="Edad" value={filters.age} options={AGES} onChange={(v) => update('age', v)} />
-            <FilterSelect label="Disponibilidad" value={filters.availability} options={AVAILABILITY} onChange={(v) => update('availability', v)} />
+            <FilterSelect label="Género" value={filters.preferredGender} options={['any', 'man', 'woman']} onChange={(v) => update('preferredGender', v)} />
           </div>
         </div>
 

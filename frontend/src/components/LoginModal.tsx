@@ -58,10 +58,11 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative glass rounded-2xl w-full max-w-md p-6 glow-violet">
+      <div className="relative w-full max-w-md rounded-xl border border-white/10 bg-[#101827] p-6 shadow-2xl shadow-black/40">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+          aria-label="Cerrar"
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
         >
           <X className="w-5 h-5" />
         </button>
@@ -77,11 +78,11 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
           </p>
         </div>
 
-        <div className="flex gap-2 mb-6 p-1 glass rounded-2xl">
+        <div className="mb-6 flex gap-1 rounded-lg border border-white/10 bg-[#0b1220] p-1">
           <button
             type="button"
             onClick={() => switchMode('login')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all
+            className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
               ${mode === 'login' ? 'bg-brand-violet/30 text-white' : 'text-slate-400 hover:text-white'}`}
           >
             <LogIn className="w-4 h-4" /> Login
@@ -89,7 +90,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
           <button
             type="button"
             onClick={() => switchMode('register')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all
+            className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
               ${mode === 'register' ? 'bg-brand-violet/30 text-white' : 'text-slate-400 hover:text-white'}`}
           >
             <UserPlus className="w-4 h-4" /> Registro
@@ -105,8 +106,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="w-full glass rounded-2xl px-4 py-3 text-sm text-white border border-white/10
-                  focus:border-brand-violet/50 focus:outline-none transition-colors"
+                className="w-full rounded-lg border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
                 placeholder="Tu nombre de jugador"
               />
             </div>
@@ -119,8 +119,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full glass rounded-2xl px-4 py-3 text-sm text-white border border-white/10
-                focus:border-brand-violet/50 focus:outline-none transition-colors"
+              className="w-full rounded-lg border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
               placeholder="tu@email.com"
             />
           </div>
@@ -133,21 +132,20 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full glass rounded-2xl px-4 py-3 text-sm text-white border border-white/10
-                focus:border-brand-violet/50 focus:outline-none transition-colors"
+              className="w-full rounded-lg border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
               placeholder="Mínimo 6 caracteres"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-500/10 rounded-xl px-3 py-2">{error}</p>
+            <p className="rounded-lg border border-red-400/15 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="gradient-btn w-full py-3 rounded-2xl text-white font-bold text-sm
-              disabled:opacity-50 flex items-center justify-center gap-2"
+            className="gradient-btn flex w-full items-center justify-center gap-2 py-3 text-sm font-semibold
+              disabled:opacity-50"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {mode === 'login' ? 'ENTRAR' : 'REGISTRARSE'}

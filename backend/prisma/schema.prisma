@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -13,12 +14,64 @@ model User {
   email       String           @unique
   password    String
   avatar      String?
+  gender      String?
   level       Int              @default(1)
   xp          Int              @default(0)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   connections UserConnection[]
   queueEntry  QueueEntry?
+  messages    MatchMessage[]
+  directMessagesSent DirectMessage[] @relation("DirectMessageSender")
+  directMessagesReceived DirectMessage[] @relation("DirectMessageRecipient")
+  ratingsGiven UserRating[] @relation("RatingAuthor")
+  ratingsReceived UserRating[] @relation("RatingTarget")
+  friendshipsStarted Friendship[] @relation("FriendshipUser")
+  friendshipsReceived Friendship[] @relation("FriendshipFriend")
+}
+
+model UserRating {
+  id        String   @id @default(cuid())
+  raterId   String
+  ratedId   String
+  score     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rater     User     @relation("RatingAuthor", fields: [raterId], references: [id], onDelete: Cascade)
+  rated     User     @relation("RatingTarget", fields: [ratedId], references: [id], onDelete: Cascade)
+
+  @@unique([raterId, ratedId])
+  @@index([ratedId])
+}
+
+model DirectMessage {
+  id          String   @id @default(cuid())
+  senderId    String
+  recipientId String
+  content     String
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+  sender      User     @relation("DirectMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User     @relation("DirectMessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, recipientId, createdAt])
+  @@index([recipientId, readAt])
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  requestedById String
+  status    String   @default("pending")
+  acceptedAt DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation("FriendshipUser", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendshipFriend", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([friendId])
+  @@index([status])
 }
 
 model UserConnection {
@@ -66,8 +119,21 @@ model LiveMatch {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   expiresAt        DateTime
+  messages         MatchMessage[]
 
   @@index([player1Id])
   @@index([player2Id])
   @@index([status])
+}
+
+model MatchMessage {
+  id        String    @id @default(cuid())
+  matchId   String
+  senderId  String
+  content   String
+  createdAt DateTime  @default(now())
+  match     LiveMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender    User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, createdAt])
 }

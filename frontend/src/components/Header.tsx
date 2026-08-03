@@ -15,20 +15,23 @@ export default function Header({ level, xp, xpToNext, onMenuClick, onOpenLogin }
   const pct = Math.round((xp / xpToNext) * 100);
 
   return (
-    <header className="sticky top-0 z-30 glass border-b border-white/8 px-4 lg:px-6 py-3">
-      <div className="flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 h-[68px] border-b border-white/10 bg-[#080d18]/85 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Logo size="sm" />
           <div className="hidden sm:block">
-            <span className="font-bold text-white">Matching</span>
-            <span className="hidden md:inline text-slate-500 text-sm ml-2">Juega. Conecta. Comparte.</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-white">Matching</span>
+              <span className="rounded border border-indigo-400/20 bg-indigo-400/10 px-1.5 py-0.5 text-[9px] font-bold text-indigo-300">BETA</span>
+            </div>
+            <span className="block text-[11px] text-slate-500">Juega. Conecta. Compite.</span>
           </div>
         </div>
 
         {isAuthenticated && (
-          <div className="hidden md:flex items-center gap-3 flex-1 max-w-xs mx-8">
-            <span className="text-xs text-slate-400 whitespace-nowrap">Nivel {level}</span>
-            <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+          <div className="mx-8 hidden max-w-xs flex-1 items-center gap-3 md:flex">
+            <span className="whitespace-nowrap text-xs text-slate-400">Nivel {level}</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-brand-violet to-brand-blue transition-all duration-500"
                 style={{ width: `${pct}%` }}
@@ -38,54 +41,43 @@ export default function Header({ level, xp, xpToNext, onMenuClick, onOpenLogin }
           </div>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isAuthenticated && (
-            <button className="relative p-2 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-violet rounded-full" />
+            <button aria-label="Notificaciones" className="relative rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+              <Bell className="h-5 w-5" />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-indigo-400" />
             </button>
           )}
 
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 glass rounded-2xl px-3 py-1.5">
+              <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-3 py-1.5">
                 <img
                   src={user.avatar ?? `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.username}`}
-                  alt="Avatar"
-                  className="w-8 h-8 rounded-full ring-2 ring-brand-violet/50"
+                  alt={`Avatar de ${user.username}`}
+                  className="h-8 w-8 rounded-full ring-1 ring-indigo-400/50"
                 />
                 <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-white leading-tight">{user.username}</p>
+                  <p className="text-sm font-medium leading-tight text-white">{user.username}</p>
                   <div className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     <span className="text-xs text-emerald-400">En línea</span>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={logout}
-                title="Cerrar sesión"
-                className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
+              <button onClick={logout} title="Cerrar sesión" className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+                <LogOut className="h-5 w-5" />
               </button>
               {onMenuClick && (
-                <button
-                  onClick={onMenuClick}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-                  title="Menú"
-                >
-                  <Menu className="w-6 h-6" />
+                <button onClick={onMenuClick} className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" title="Menú">
+                  <Menu className="h-6 w-6" />
                 </button>
               )}
             </div>
           ) : (
-            <button
-              onClick={onOpenLogin}
-              className="gradient-btn flex items-center gap-2 px-4 py-2 rounded-2xl text-white text-sm font-semibold"
-            >
-              <LogIn className="w-4 h-4" />
-              <span className="hidden sm:inline">Iniciar sesión</span>
+            <button onClick={onOpenLogin} className="primary-button flex items-center gap-2 px-4 py-2.5 text-sm font-semibold">
+              <LogIn className="h-4 w-4" />
+              <span>Iniciar sesión</span>
             </button>
           )}
         </div>

@@ -5,46 +5,65 @@ interface GameGridProps {
   games: Game[];
   selected: string;
   onSelect: (id: string) => void;
+  disabled?: boolean;
 }
 
-export default function GameGrid({ games, selected, onSelect }: GameGridProps) {
+const GAME_IMAGES: Record<string, string> = {
+  lol: '/games/lol.jpg',
+  valorant: '/games/valorant.png',
+  apex: '/games/apex.jpg',
+  fortnite: '/games/fortnite.png',
+  roblox: '/games/roblox.png',
+  'rocket-league': '/games/rocket-league.jpg',
+  overwatch: '/games/overwatch.jpg',
+  cs2: '/games/cs2.jpg',
+  dota2: '/games/dota2.jpg',
+};
+
+export default function GameGrid({ games, selected, onSelect, disabled }: GameGridProps) {
   return (
-    <section className="mb-8">
-      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-        1. Elige tu juego
-      </h3>
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-3">
+    <section aria-labelledby="game-selector-title" aria-disabled={disabled} className={`mb-8 transition-opacity ${disabled ? 'opacity-55' : ''}`}>
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <p className="section-kicker">PASO 01</p>
+          <h2 id="game-selector-title" className="mt-2 text-xl font-semibold text-white sm:text-2xl">
+            Selecciona tu juego
+          </h2>
+        </div>
+        <p className="hidden text-sm text-slate-500 sm:block">{games.length} juegos disponibles</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {games.map((game) => {
           const isSelected = selected === game.id;
           return (
             <button
+              type="button"
+              disabled={disabled}
               key={game.id}
               onClick={() => onSelect(game.id)}
-              className={`relative group rounded-2xl aspect-square overflow-hidden transition-all duration-300
-                ${isSelected
-                  ? 'ring-2 ring-brand-violet glow-violet scale-105'
-                  : 'ring-1 ring-white/10 hover:ring-brand-violet/50 hover:scale-105'
-                }`}
+              aria-pressed={isSelected}
+              aria-label={`Seleccionar ${game.name}`}
+              className={`game-card group disabled:cursor-not-allowed ${isSelected ? 'game-card-selected' : ''}`}
+              style={{ '--game-color': game.color } as React.CSSProperties}
             >
-              <div
-                className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-opacity"
-                style={{ background: `linear-gradient(135deg, ${game.color}40, ${game.color}20)` }}
+              <img
+                src={GAME_IMAGES[game.id]}
+                alt=""
+                loading="lazy"
+                className="game-card-image"
               />
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
-                <span
-                  className="text-2xl font-black mb-1"
-                  style={{ color: game.color }}
-                >
-                  {game.short}
-                </span>
-                <span className="text-[10px] text-slate-300 text-center leading-tight font-medium">
+              <span className="game-card-overlay" aria-hidden="true" />
+              <span className="game-card-accent" aria-hidden="true" />
+              <span className="relative z-10 min-w-0 text-left">
+                <span className="block truncate text-sm font-semibold text-white">
                   {game.name}
                 </span>
-              </div>
+              </span>
               {isSelected && (
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-violet flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white" />
-                </div>
+                <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-white shadow-lg shadow-indigo-500/30">
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                </span>
               )}
             </button>
           );

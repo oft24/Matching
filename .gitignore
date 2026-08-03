@@ -7,3 +7,7 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.vercel
+.env*
+.agents/
+skills-lock.json

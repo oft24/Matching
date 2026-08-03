@@ -1,13 +1,18 @@
-import { LogIn, LogOut, Mail, Shield, Trophy, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { LogIn, LogOut, Mail, Save, Shield, Trophy, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ConnectionSettings from './ConnectionSettings';
+import { saveProfile } from '../lib/api';
 
 interface ProfilePageProps {
   onOpenLogin: () => void;
 }
 
 export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, updateUser } = useAuth();
+  const [gender, setGender] = useState<'man' | 'woman' | 'other' | ''>('');
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setGender(user?.gender ?? ''), [user?.gender]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -79,6 +84,19 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
           <Stat label="Nivel de cuenta" value={String(user.level)} />
           <Stat label="Experiencia" value={`${user.xp} XP`} />
           <Stat label="Estado" value="En línea" accent />
+        </div>
+
+        <div className="pt-6 mt-6 border-t border-white/8 flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-xs text-slate-400 mb-2">Soy</label>
+            <select value={gender} onChange={(e) => setGender(e.target.value as typeof gender)} className="w-full glass rounded-xl px-3 py-2.5 text-white border border-white/10 focus:outline-none">
+              <option value="" className="bg-brand-dark">Prefiero no decirlo</option>
+              <option value="man" className="bg-brand-dark">Hombre</option>
+              <option value="woman" className="bg-brand-dark">Mujer</option>
+              <option value="other" className="bg-brand-dark">Otro</option>
+            </select>
+          </div>
+          <button disabled={saving} onClick={async () => { setSaving(true); try { updateUser(await saveProfile(gender || null)); } finally { setSaving(false); } }} className="gradient-btn px-5 py-2.5 rounded-xl text-white font-semibold inline-flex justify-center items-center gap-2 disabled:opacity-50"><Save className="w-4 h-4" />Guardar perfil</button>
         </div>
 
         <ConnectionSettings />

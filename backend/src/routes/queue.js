@@ -13,7 +13,7 @@ router.post('/join', async (req, res) => {
       return res.status(400).json({ error: 'Juego y filtros son obligatorios' });
     }
     await expireStaleMatches();
-    const result = await joinQueue(req.user.id, game, filters);
+    const result = await joinQueue(req.user.id, game, { ...filters, userGender: req.user.gender });
     const status = await getQueueStatus(req.user.id);
     res.json({ ...result, ...status });
   } catch (err) {

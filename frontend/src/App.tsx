@@ -7,11 +7,15 @@ import LiveMatchmaking from './components/LiveMatchmaking';
 import GuestLanding from './components/GuestLanding';
 import DashboardPanel from './components/DashboardPanel';
 import ProfilePage from './components/ProfilePage';
+import FriendsPage from './components/FriendsPage';
+import MatchChatDock from './components/MatchChatDock';
+import MessagesPage from './components/MessagesPage';
 import LoginModal from './components/LoginModal';
 import QuickSearch, { TrustFooter } from './components/QuickSearch';
 import { useAuth } from './context/AuthContext';
 import { fetchDashboard, fetchGames } from './lib/api';
 import { DEFAULT_GAMES } from './data/games';
+import { GAME_RANKS } from './data/gameRanks';
 import type { Dashboard, Game, SearchFilters } from './types';
 
 const DEFAULT_FILTERS: SearchFilters = {
@@ -22,7 +26,7 @@ const DEFAULT_FILTERS: SearchFilters = {
   rank: 'Gold',
   role: 'Any',
   age: '18-25',
-  availability: 'Noches',
+  preferredGender: 'any',
   verifiedOnly: false,
   playstyle: 'Competitivo',
   objectives: 'Subir de rango',
@@ -48,6 +52,9 @@ export default function App() {
   const [games, setGames] = useState<Game[]>(DEFAULT_GAMES);
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [dashboardGame, setDashboardGame] = useState<'lol' | 'valorant'>('lol');
+  const [dashboardQueue, setDashboardQueue] = useState<'solo' | 'flex'>('solo');
+  const [matchmakingLocked, setMatchmakingLocked] = useState(false);
 
   const openLogin = useCallback((mode: 'login' | 'register' = 'login') => {
     setLoginMode(mode);
@@ -66,11 +73,12 @@ export default function App() {
       setDashboard(null);
       return;
     }
-    fetchDashboard().then(setDashboard).catch(() => setDashboard(null));
-  }, [isAuthenticated, user?.id]);
+    setDashboard(null);
+    fetchDashboard(dashboardGame, dashboardQueue).then(setDashboard).catch(() => setDashboard(null));
+  }, [isAuthenticated, user?.id, activeNav, dashboardGame, dashboardQueue]);
 
   const handleGameSelect = (id: string) => {
-    setFilters((f) => ({ ...f, game: id }));
+    setFilters((f) => ({ ...f, game: id, rank: GAME_RANKS[id]?.[0] ?? 'Sin rango' }));
   };
 
   const showBuscar = activeNav === 'buscar';
@@ -80,18 +88,18 @@ export default function App() {
 
   const renderAuthenticatedContent = () => {
     if (showProfile) return <ProfilePage onOpenLogin={() => openLogin()} />;
-    if (showDashboard) return <DashboardPanel data={dashboard} />;
+    if (showDashboard) return <DashboardPanel data={dashboard} game={dashboardGame} onGameChange={setDashboardGame} queue={dashboardQueue} onQueueChange={setDashboardQueue} />;
     if (activeNav === 'grupos') return <ComingSoon title="Grupos" />;
-    if (activeNav === 'amigos') return <ComingSoon title="Amigos" />;
-    if (activeNav === 'mensajes') return <ComingSoon title="Mensajes" />;
+    if (activeNav === 'amigos') return <FriendsPage />;
+    if (activeNav === 'mensajes') return <MessagesPage />;
     if (activeNav === 'eventos') return <ComingSoon title="Eventos" />;
     if (activeNav === 'ajustes') return <ComingSoon title="Ajustes" />;
 
     if (showBuscar) {
       return (
         <>
-          <GameGrid games={games} selected={filters.game} onSelect={handleGameSelect} />
-          <LiveMatchmaking filters={filters} onChange={setFilters} />
+          <GameGrid games={games} selected={filters.game} onSelect={handleGameSelect} disabled={matchmakingLocked} />
+          <LiveMatchmaking filters={filters} onChange={setFilters} onLockChange={setMatchmakingLocked} />
         </>
       );
     }
@@ -121,7 +129,7 @@ export default function App() {
         />
 
         <div className="flex flex-1">
-          <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+          <main className={`flex-1 overflow-y-auto ${isAuthenticated ? 'p-4 lg:p-6' : 'px-4 sm:px-6 lg:px-8'}`}>
             {!isAuthenticated ? (
               <GuestLanding
                 games={games}
@@ -156,6 +164,7 @@ export default function App() {
         onClose={() => setLoginOpen(false)}
         initialMode={loginMode}
       />
+      {isAuthenticated && <MatchChatDock />}
     </div>
   );
 }

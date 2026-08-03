@@ -14,12 +14,14 @@ import type { QueueStatus, SearchFilters } from '../types';
 interface LiveMatchmakingProps {
   filters: SearchFilters;
   onChange: (filters: SearchFilters) => void;
+  onLockChange?: (locked: boolean) => void;
 }
 
-export default function LiveMatchmaking({ filters, onChange }: LiveMatchmakingProps) {
+export default function LiveMatchmaking({ filters, onChange, onLockChange }: LiveMatchmakingProps) {
   const [status, setStatus] = useState<QueueStatus>({ status: 'idle' });
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [dismissedMatchId, setDismissedMatchId] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = useCallback(() => {
@@ -59,6 +61,7 @@ export default function LiveMatchmaking({ filters, onChange }: LiveMatchmakingPr
     setLoading(true);
     try {
       const s = await joinQueue(filters.game, filters);
+      setDismissedMatchId(null);
       setStatus(s);
       startPolling();
     } catch {
@@ -103,7 +106,10 @@ export default function LiveMatchmaking({ filters, onChange }: LiveMatchmakingPr
   };
 
   const isSearching = status.status === 'searching';
-  const showPopup = status.status === 'pending' || status.status === 'accepted';
+  const isLocked = isSearching || status.status === 'pending';
+  useEffect(() => { onLockChange?.(isLocked); }, [isLocked, onLockChange]);
+  const showPopup = status.status === 'pending'
+    && status.matchId !== dismissedMatchId;
 
   return (
     <section className="mb-8">
@@ -124,10 +130,11 @@ export default function LiveMatchmaking({ filters, onChange }: LiveMatchmakingPr
         onSearch={handleStartSearch}
         loading={loading}
         hideSearchButton
+        disabled={isLocked}
       />
 
       <div className="flex gap-3 mt-4">
-        {!isSearching ? (
+        {!isSearching && status.status !== 'pending' ? (
           <button
             onClick={handleStartSearch}
             disabled={loading}
@@ -137,7 +144,7 @@ export default function LiveMatchmaking({ filters, onChange }: LiveMatchmakingPr
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radio className="w-4 h-4" />}
             BUSCAR JUGADOR
           </button>
-        ) : (
+        ) : isSearching ? (
           <button
             onClick={handleStopSearch}
             disabled={loading}
@@ -146,7 +153,7 @@ export default function LiveMatchmaking({ filters, onChange }: LiveMatchmakingPr
           >
             <Square className="w-4 h-4" /> CANCELAR BÚSQUEDA
           </button>
-        )}
+        ) : <button disabled className="flex-1 rounded-2xl border border-brand-violet/20 py-3 text-sm font-bold text-brand-violet opacity-70">MATCH PENDIENTE</button>}
       </div>
 
       {isSearching && (
@@ -164,6 +171,7 @@ export default function LiveMatchmaking({ filters, onChange }: LiveMatchmakingPr
           status={status}
           onAccept={handleAccept}
           onReject={handleReject}
+          onClose={() => setDismissedMatchId(status.matchId ?? null)}
           loading={actionLoading}
         />
       )}

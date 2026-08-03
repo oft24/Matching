@@ -2,7 +2,7 @@ import { prisma } from '../config/prisma.js';
 
 const MATCH_TTL_MS = 5 * 60 * 1000;
 
-function publicUser(user, connections = []) {
+function publicUser(user, connections = [], includeDiscord = false) {
   const riot = connections.find((c) => c.provider === 'riot');
   const discord = connections.find((c) => c.provider === 'discord');
   return {
@@ -10,16 +10,19 @@ function publicUser(user, connections = []) {
     username: user.username,
     avatar: user.avatar ?? `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.username}`,
     level: user.level,
+    gender: user.gender,
     riot: riot?.connected
       ? { gameName: riot.riotGameName, tagLine: riot.riotTagLine, region: riot.riotRegion }
       : null,
-    discord: discord?.connected ? { username: discord.discordUsername } : null,
+    discord: includeDiscord && discord?.connected ? { username: discord.discordUsername, userId: discord.discordUserId } : null,
   };
 }
 
 function filtersCompatible(a, b) {
   if (a.game !== b.game) return false;
   if (a.region && b.region && a.region !== b.region) return false;
+  if (a.preferredGender && a.preferredGender !== 'any' && a.preferredGender !== b.userGender) return false;
+  if (b.preferredGender && b.preferredGender !== 'any' && b.preferredGender !== a.userGender) return false;
   return true;
 }
 
@@ -60,8 +63,13 @@ async function tryMatch(userId, game, filters) {
     const match = await prisma.$transaction(async (tx) => {
       const existing = await tx.liveMatch.findFirst({
         where: {
-          status: 'pending',
-          OR: [{ player1Id: userId }, { player2Id: userId }, { player1Id: entry.userId }, { player2Id: entry.userId }],
+          OR: [
+            { status: 'pending', OR: [{ player1Id: userId }, { player2Id: userId }, { player1Id: entry.userId }, { player2Id: entry.userId }] },
+            { status: 'accepted', OR: [
+              { player1Id: userId, player2Id: entry.userId },
+              { player1Id: entry.userId, player2Id: userId },
+            ] },
+          ],
         },
       });
       if (existing) return null;
@@ -95,6 +103,11 @@ async function tryMatch(userId, game, filters) {
 }
 
 export async function joinQueue(userId, game, filters) {
+  const activeMatch = await prisma.liveMatch.findFirst({
+    where: { status: 'pending', OR: [{ player1Id: userId }, { player2Id: userId }] },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (activeMatch) return { searching: false, matchId: activeMatch.id, alreadyMatched: true };
   await leaveQueue(userId);
 
   await prisma.queueEntry.create({
@@ -109,39 +122,50 @@ export async function leaveQueue(userId) {
   await prisma.queueEntry.deleteMany({ where: { userId } });
 }
 
+async function matchStatusPayload(userId, activeMatch) {
+  const isPlayer1 = activeMatch.player1Id === userId;
+  const opponentId = isPlayer1 ? activeMatch.player2Id : activeMatch.player1Id;
+  const opponent = await getUserWithConnections(opponentId);
+  const myFilters = activeMatch.filters?.[isPlayer1 ? 'player1' : 'player2'] ?? {};
+  const theirFilters = activeMatch.filters?.[isPlayer1 ? 'player2' : 'player1'] ?? {};
+
+  return {
+    status: activeMatch.status,
+    matchId: activeMatch.id,
+    myAccepted: isPlayer1 ? activeMatch.player1Accepted : activeMatch.player2Accepted,
+    opponentAccepted: isPlayer1 ? activeMatch.player2Accepted : activeMatch.player1Accepted,
+    opponent: opponent ? publicUser(opponent, opponent.connections, activeMatch.status === 'accepted') : null,
+    compatibility: calcCompatibility(myFilters, theirFilters),
+    discordInviteUrl: activeMatch.discordInviteUrl,
+    expiresAt: activeMatch.expiresAt,
+  };
+}
+
 export async function getQueueStatus(userId) {
-  const activeMatch = await prisma.liveMatch.findFirst({
+  const pendingMatch = await prisma.liveMatch.findFirst({
     where: {
-      status: { in: ['pending', 'accepted'] },
-      OR: [{ player1Id: userId }, { player2Id: userId }],
+      status: 'pending',
       expiresAt: { gt: new Date() },
+      OR: [{ player1Id: userId }, { player2Id: userId }],
     },
     orderBy: { createdAt: 'desc' },
   });
 
-  if (activeMatch) {
-    const isPlayer1 = activeMatch.player1Id === userId;
-    const opponentId = isPlayer1 ? activeMatch.player2Id : activeMatch.player1Id;
-    const opponent = await getUserWithConnections(opponentId);
-    const myFilters = activeMatch.filters?.[isPlayer1 ? 'player1' : 'player2'] ?? {};
-    const theirFilters = activeMatch.filters?.[isPlayer1 ? 'player2' : 'player1'] ?? {};
-
-    return {
-      status: activeMatch.status,
-      matchId: activeMatch.id,
-      myAccepted: isPlayer1 ? activeMatch.player1Accepted : activeMatch.player2Accepted,
-      opponentAccepted: isPlayer1 ? activeMatch.player2Accepted : activeMatch.player1Accepted,
-      opponent: opponent ? publicUser(opponent, opponent.connections) : null,
-      compatibility: calcCompatibility(myFilters, theirFilters),
-      discordInviteUrl: activeMatch.discordInviteUrl,
-      expiresAt: activeMatch.expiresAt,
-    };
-  }
+  if (pendingMatch) return matchStatusPayload(userId, pendingMatch);
 
   const inQueue = await prisma.queueEntry.findUnique({ where: { userId } });
   if (inQueue?.status === 'searching') {
     return { status: 'searching' };
   }
+
+  const acceptedMatch = await prisma.liveMatch.findFirst({
+    where: {
+      status: 'accepted',
+      OR: [{ player1Id: userId }, { player2Id: userId }],
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+  if (acceptedMatch) return matchStatusPayload(userId, acceptedMatch);
 
   return { status: 'idle' };
 }
@@ -183,7 +207,19 @@ async function createDiscordInvite(match) {
     }
   }
 
-  return `https://discord.com/channels/@me?matching=${match.id}`;
+  return null;
+}
+
+async function returnPlayerToQueue(match, userId) {
+  const isPlayer1 = match.player1Id === userId;
+  const filters = match.filters?.[isPlayer1 ? 'player1' : 'player2'];
+  if (!filters) return;
+
+  await prisma.queueEntry.upsert({
+    where: { userId },
+    update: { game: match.game, filters, status: 'searching', createdAt: new Date() },
+    create: { userId, game: match.game, filters, status: 'searching' },
+  });
 }
 
 export async function respondToMatch(userId, matchId, action) {
@@ -208,6 +244,8 @@ export async function respondToMatch(userId, matchId, action) {
         ...(isPlayer1 ? { player1Rejected: true } : { player2Rejected: true }),
       },
     });
+    const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+    await returnPlayerToQueue(match, opponentId);
     return { status: updated.status };
   }
 
@@ -218,19 +256,37 @@ export async function respondToMatch(userId, matchId, action) {
       data,
     });
 
-    if (updated.player1Accepted && updated.player2Accepted) {
-      const inviteUrl = await createDiscordInvite(updated);
-      const final = await prisma.liveMatch.update({
-        where: { id: matchId },
-        data: { status: 'accepted', discordInviteUrl: inviteUrl },
-      });
-      return { status: 'accepted', discordInviteUrl: final.discordInviteUrl };
+    if (!updated.player1Accepted || !updated.player2Accepted) {
+      return { status: 'pending', waitingForOpponent: true };
     }
 
-    return { status: 'pending', waitingForOpponent: true };
+    const inviteUrl = await createDiscordInvite(updated);
+    const final = await prisma.liveMatch.update({ where: { id: matchId }, data: { status: 'accepted', discordInviteUrl: inviteUrl } });
+    return { status: 'accepted', discordInviteUrl: final.discordInviteUrl };
   }
 
   return { error: 'Acción inválida' };
+}
+
+export async function closeMatch(userId, matchId) {
+  const match = await prisma.liveMatch.findFirst({
+    where: { id: matchId, status: 'accepted', OR: [{ player1Id: userId }, { player2Id: userId }] },
+  });
+  if (!match) return { error: 'Match no disponible' };
+  await prisma.$transaction([
+    prisma.liveMatch.update({ where: { id: matchId }, data: { status: 'closed' } }),
+    prisma.queueEntry.deleteMany({ where: { userId: { in: [match.player1Id, match.player2Id] } } }),
+  ]);
+  return { status: 'closed' };
+}
+
+export async function getAcceptedChats(userId) {
+  const matches = await prisma.liveMatch.findMany({
+    where: { status: 'accepted', OR: [{ player1Id: userId }, { player2Id: userId }] },
+    orderBy: { updatedAt: 'desc' },
+    take: 5,
+  });
+  return Promise.all(matches.map((match) => matchStatusPayload(userId, match)));
 }
 
 export async function expireStaleMatches() {
