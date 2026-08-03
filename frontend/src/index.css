@@ -10,25 +10,13 @@
   transform-origin: top;
 }
 
-@keyframes match-left-in {
-  from { opacity: 0; transform: translateX(-80px) rotate(-16deg) scale(.85); }
-  to { opacity: 1; transform: translateX(0) rotate(-6deg) scale(1); }
+@keyframes match-avatar-pop {
+  from { opacity: 0; transform: scale(.92); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-@keyframes match-right-in {
-  from { opacity: 0; transform: translateX(80px) rotate(16deg) scale(.85); }
-  to { opacity: 1; transform: translateX(0) rotate(6deg) scale(1); }
-}
-
-@keyframes match-heart-pop {
-  0% { opacity: 0; transform: translateX(-50%) scale(.2); }
-  65% { opacity: 1; transform: translateX(-50%) scale(1.18); }
-  100% { opacity: 1; transform: translateX(-50%) scale(1); }
-}
-
-.match-avatar-left { animation: match-left-in 520ms cubic-bezier(.2,.8,.2,1) both; }
-.match-avatar-right { animation: match-right-in 520ms cubic-bezier(.2,.8,.2,1) both; }
-.match-heart { animation: match-heart-pop 480ms 300ms cubic-bezier(.2,.8,.2,1) both; }
+.match-avatar-left, .match-avatar-right { animation: match-avatar-pop 360ms ease-out both; }
+.match-avatar-right { animation-delay: 100ms; }
 
 @theme {
   --color-brand-violet: #7c3aed;

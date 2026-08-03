@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { Check, Copy, ExternalLink, Heart, MessageCircle, Send, Users, X } from 'lucide-react';
+import { Check, Copy, ExternalLink, MessageCircle, Send, Users, X } from 'lucide-react';
 import { fetchMatchMessages, sendMatchMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import type { MatchMessage, QueueStatus } from '../types';
@@ -72,9 +72,10 @@ export default function MatchPopup({ status, onAccept, onReject, onClose, loadin
           <>
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-violet/20 text-brand-violet text-sm font-medium mb-4">
-                <Users className="w-4 h-4" /> Solicitud encontrada
+                <Users className="w-4 h-4" /> Nueva conexión
               </div>
-              <h2 className="text-xl font-bold text-white">{status.myAccepted ? 'Esperando confirmación' : '¿Jugar con esta persona?'}</h2>
+              <h2 className="text-2xl font-black uppercase tracking-wide text-white">{status.myAccepted ? 'Esperando confirmación' : 'MATCHING ENCONTRADO'}</h2>
+              {!status.myAccepted && <p className="mt-2 text-sm text-slate-400">¿Quieres jugar con esta persona?</p>}
               {status.compatibility && (
                 <p className="text-slate-400 text-sm mt-1">{status.compatibility}% de compatibilidad</p>
               )}
@@ -118,10 +119,9 @@ export default function MatchPopup({ status, onAccept, onReject, onClose, loadin
               <div className="relative mx-auto mb-5 h-28 max-w-[240px]">
                 <img src={user?.avatar ?? `https://api.dicebear.com/9.x/avataaars/svg?seed=${user?.username}`} alt={user?.username ?? 'Tu perfil'} className="match-avatar-left absolute left-5 top-2 h-24 w-20 rounded-xl border-2 border-white/20 object-cover shadow-xl" />
                 <img src={opponent.avatar} alt={opponent.username} className="match-avatar-right absolute right-5 top-2 h-24 w-20 rounded-xl border-2 border-white/20 object-cover shadow-xl" />
-                <span className="match-heart absolute left-1/2 top-10 z-10 grid h-11 w-11 place-items-center rounded-full bg-pink-500 text-white shadow-lg"><Heart className="h-6 w-6 fill-current" /></span>
               </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-pink-400">MATCH CONFIRMADO</p>
-              <h2 className="mt-1 text-3xl font-black text-white mb-1">¡Hicieron match!</h2>
+              <p className="text-2xl font-black uppercase tracking-[0.14em] text-indigo-300 sm:text-3xl">MATCHING ENCONTRADO</p>
+              <h2 className="mt-2 text-lg font-semibold text-white mb-1">Ya pueden jugar juntos</h2>
               <p className="text-slate-400 text-sm mb-4">
                 Coordina la partida con {opponent.username}.
               </p>
