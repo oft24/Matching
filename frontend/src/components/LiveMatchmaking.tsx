@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Radio, Square } from 'lucide-react';
 import MatchmakingPanel from './MatchmakingPanel';
+import MatchFoundOverlay from './MatchFoundOverlay';
 import MatchPopup from './MatchPopup';
 import {
   acceptMatch,
@@ -22,7 +23,16 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [dismissedMatchId, setDismissedMatchId] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<QueueStatus | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const celebratedMatchRef = useRef<string | null>(null);
+
+  const announceCelebration = useCallback((nextStatus: QueueStatus) => {
+    if (!nextStatus.matchId || celebratedMatchRef.current === nextStatus.matchId) return;
+    celebratedMatchRef.current = nextStatus.matchId;
+    setCelebration(nextStatus);
+    window.dispatchEvent(new CustomEvent('matching-found', { detail: { matchId: nextStatus.matchId } }));
+  }, []);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -34,6 +44,7 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
   const refreshStatus = useCallback(async () => {
     try {
       const s = await getQueueStatus();
+      if (s.status === 'accepted') announceCelebration(s);
       setStatus(s);
       if (s.status === 'idle' || s.status === 'rejected' || s.status === 'expired') {
         stopPolling();
@@ -41,7 +52,7 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
     } catch {
       stopPolling();
     }
-  }, [stopPolling]);
+  }, [announceCelebration, stopPolling]);
 
   const startPolling = useCallback(() => {
     stopPolling();
@@ -52,16 +63,19 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
 
   useEffect(() => {
     getQueueStatus().then((s) => {
+      if (s.status === 'accepted') announceCelebration(s);
       setStatus(s);
       if (s.status === 'searching' || s.status === 'pending') startPolling();
     }).catch(() => {});
-  }, [startPolling]);
+  }, [announceCelebration, startPolling]);
 
   const handleStartSearch = async () => {
     setLoading(true);
     try {
       const s = await joinQueue(filters.game, filters);
       setDismissedMatchId(null);
+      celebratedMatchRef.current = null;
+      setCelebration(null);
       setStatus(s);
       startPolling();
     } catch {
@@ -106,7 +120,8 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
   };
 
   const isSearching = status.status === 'searching';
-  const isLocked = isSearching || status.status === 'pending';
+  const isMatchActive = status.status === 'accepted';
+  const isLocked = isSearching || status.status === 'pending' || isMatchActive;
   useEffect(() => { onLockChange?.(isLocked); }, [isLocked, onLockChange]);
   const showPopup = status.status === 'pending'
     && status.matchId !== dismissedMatchId;
@@ -134,7 +149,7 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
       />
 
       <div className="flex gap-3 mt-4">
-        {!isSearching && status.status !== 'pending' ? (
+        {!isSearching && status.status !== 'pending' && !isMatchActive ? (
           <button
             onClick={handleStartSearch}
             disabled={loading}
@@ -153,7 +168,7 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
           >
             <Square className="w-4 h-4" /> CANCELAR BÚSQUEDA
           </button>
-        ) : <button disabled className="flex-1 rounded-2xl border border-brand-violet/20 py-3 text-sm font-bold text-brand-violet opacity-70">MATCH PENDIENTE</button>}
+        ) : <button disabled className="flex-1 rounded-2xl border border-brand-violet/20 py-3 text-sm font-bold text-brand-violet opacity-70">{isMatchActive ? 'MATCHING ENCONTRADO' : 'MATCH PENDIENTE'}</button>}
       </div>
 
       {isSearching && (
@@ -175,6 +190,7 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
           loading={actionLoading}
         />
       )}
+      {celebration && <MatchFoundOverlay status={celebration} onDone={() => setCelebration(null)} />}
     </section>
   );
 }

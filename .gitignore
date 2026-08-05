@@ -11,3 +11,5 @@ venv/
 .env*
 .agents/
 skills-lock.json
+release/
+desktop-artifacts/

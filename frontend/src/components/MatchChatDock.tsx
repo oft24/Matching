@@ -1,27 +1,101 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Copy, MessageCircle, Send, X } from 'lucide-react';
 import { closeMatchChat, fetchActiveMatchChats, fetchMatchMessages, sendMatchMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import type { MatchMessage, QueueStatus } from '../types';
 
+const CHAT_REVEAL_DELAY = 3200;
+
 export default function MatchChatDock() {
   const { isAuthenticated } = useAuth();
   const [chats, setChats] = useState<QueueStatus[]>([]);
+  const visibleRef = useRef<QueueStatus[]>([]);
+  const pendingRef = useRef(new Map<string, QueueStatus>());
+  const timersRef = useRef(new Map<string, number>());
+  const revealAtRef = useRef(new Map<string, number>());
+
+  const publish = useCallback((next: QueueStatus[]) => {
+    visibleRef.current = next;
+    setChats(next);
+  }, []);
+
+  const reveal = useCallback((matchId: string) => {
+    const pending = pendingRef.current.get(matchId);
+    pendingRef.current.delete(matchId);
+    timersRef.current.delete(matchId);
+    revealAtRef.current.delete(matchId);
+    if (!pending) return;
+    publish([...visibleRef.current.filter((item) => item.matchId !== matchId), pending]);
+  }, [publish]);
+
+  const scheduleReveal = useCallback((matchId: string) => {
+    const previousTimer = timersRef.current.get(matchId);
+    if (previousTimer) window.clearTimeout(previousTimer);
+    const releaseAt = revealAtRef.current.get(matchId) ?? Date.now() + CHAT_REVEAL_DELAY;
+    revealAtRef.current.set(matchId, releaseAt);
+    const timer = window.setTimeout(() => reveal(matchId), Math.max(0, releaseAt - Date.now()));
+    timersRef.current.set(matchId, timer);
+  }, [reveal]);
+
+  const removeVisible = useCallback((matchId: string) => {
+    publish(visibleRef.current.filter((item) => item.matchId !== matchId));
+  }, [publish]);
 
   const refresh = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      publish([]);
+      return;
+    }
     try { setChats(await fetchActiveMatchChats()); } catch { /* preserve current windows on a temporary failure */ }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, publish]);
+
+  const refreshWithReveal = useCallback(async () => {
+    if (!isAuthenticated) return refresh();
+    try {
+      const incoming = await fetchActiveMatchChats();
+      const incomingIds = new Set(incoming.map((item) => item.matchId).filter(Boolean));
+      const incomingById = new Map(incoming.map((item) => [item.matchId, item]));
+      publish(visibleRef.current.filter((item) => incomingIds.has(item.matchId)).map((item) => incomingById.get(item.matchId) ?? item));
+
+      for (const [matchId, timer] of timersRef.current) {
+        if (!incomingIds.has(matchId)) {
+          window.clearTimeout(timer);
+          timersRef.current.delete(matchId);
+          pendingRef.current.delete(matchId);
+          revealAtRef.current.delete(matchId);
+        }
+      }
+      for (const chat of incoming) {
+        if (!chat.matchId || visibleRef.current.some((item) => item.matchId === chat.matchId)) continue;
+        pendingRef.current.set(chat.matchId, chat);
+        if (!timersRef.current.has(chat.matchId)) scheduleReveal(chat.matchId);
+      }
+    } catch { /* preserve current windows on a temporary failure */ }
+  }, [isAuthenticated, publish, refresh, scheduleReveal]);
 
   useEffect(() => {
-    void refresh();
-    const timer = window.setInterval(refresh, 4000);
+    void refreshWithReveal();
+    const timer = window.setInterval(refreshWithReveal, 2000);
     return () => window.clearInterval(timer);
-  }, [refresh]);
+  }, [refreshWithReveal]);
+
+  useEffect(() => {
+    const announce = (event: Event) => {
+      const matchId = (event as CustomEvent<{ matchId?: string }>).detail?.matchId;
+      if (!matchId) return;
+      revealAtRef.current.set(matchId, Date.now() + CHAT_REVEAL_DELAY);
+      if (pendingRef.current.has(matchId)) scheduleReveal(matchId);
+    };
+    window.addEventListener('matching-found', announce);
+    return () => {
+      window.removeEventListener('matching-found', announce);
+      for (const timer of timersRef.current.values()) window.clearTimeout(timer);
+    };
+  }, [scheduleReveal]);
 
   if (!chats.length) return null;
   return <div className="fixed bottom-0 right-4 z-[90] flex max-w-[calc(100vw-2rem)] items-end gap-3 overflow-x-auto px-1 pt-2">
-    {chats.map((chat) => <ChatWindow key={chat.matchId} status={chat} onClosed={() => setChats((items) => items.filter((item) => item.matchId !== chat.matchId))} />)}
+    {chats.map((chat) => <ChatWindow key={chat.matchId} status={chat} onClosed={() => removeVisible(chat.matchId!)} />)}
   </div>;
 }
 
@@ -32,12 +106,24 @@ function ChatWindow({ status, onClosed }: { status: QueueStatus; onClosed: () =>
   const [minimized, setMinimized] = useState(false);
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const messagesReadyRef = useRef(false);
   const opponent = status.opponent!;
 
   const refreshMessages = useCallback(async () => {
     if (!status.matchId) return;
-    try { setMessages(await fetchMatchMessages(status.matchId)); } catch { /* retry on next poll */ }
-  }, [status.matchId]);
+    try {
+      const nextMessages = await fetchMatchMessages(status.matchId);
+      setMessages((current) => {
+        if (messagesReadyRef.current && document.hidden) {
+          const knownIds = new Set(current.map((item) => item.id));
+          const incoming = nextMessages.find((item) => item.sender.id !== user?.id && !knownIds.has(item.id));
+          if (incoming) void window.matchingDesktop?.notify(opponent.username, incoming.content);
+        }
+        messagesReadyRef.current = true;
+        return nextMessages;
+      });
+    } catch { /* retry on next poll */ }
+  }, [opponent.username, status.matchId, user?.id]);
 
   useEffect(() => {
     void refreshMessages();

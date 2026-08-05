@@ -13,6 +13,7 @@ interface HeaderProps {
 export default function Header({ level, xp, xpToNext, onMenuClick, onOpenLogin }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const pct = Math.round((xp / xpToNext) * 100);
+  const isDesktop = window.matchingDesktop?.isDesktop === true;
 
   return (
     <header className="sticky top-0 z-30 h-[68px] border-b border-white/10 bg-[#080d18]/85 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
@@ -23,6 +24,7 @@ export default function Header({ level, xp, xpToNext, onMenuClick, onOpenLogin }
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-white">Matching</span>
               <span className="rounded border border-indigo-400/20 bg-indigo-400/10 px-1.5 py-0.5 text-[9px] font-bold text-indigo-300">BETA</span>
+              {isDesktop && <span className="rounded border border-emerald-400/20 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">DESKTOP</span>}
             </div>
             <span className="block text-[11px] text-slate-500">Juega. Conecta. Compite.</span>
           </div>
