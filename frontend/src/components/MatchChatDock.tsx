@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Copy, MessageCircle, Send, X } from 'lucide-react';
+import Avatar from './Avatar';
 import { closeMatchChat, fetchActiveMatchChats, fetchMatchMessages, sendMatchMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import type { MatchMessage, QueueStatus } from '../types';
@@ -59,7 +60,7 @@ function ChatWindow({ status, onClosed }: { status: QueueStatus; onClosed: () =>
 
   return <aside className={`relative w-[min(350px,calc(100vw-2rem))] shrink-0 overflow-hidden rounded-t-xl border border-white/10 bg-[#0b111d] shadow-2xl transition-all ${minimized ? 'h-14' : 'h-[480px]'}`}>
     <button onClick={() => setMinimized((value) => !value)} className="flex h-14 w-full items-center gap-3 border-b border-white/10 px-4 pr-20 text-left hover:bg-white/[0.035]">
-      <span className="relative"><img src={opponent.avatar} alt="" className="h-9 w-9 rounded-lg object-cover" /><span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-[#0b111d] bg-emerald-400" /></span>
+      <Avatar name={opponent.username} src={opponent.avatar} size={36} status="online" />
       <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-white">{opponent.username}</strong><small className="text-emerald-400">Match conectado</small></span>
     </button>
     <button title={minimized ? 'Abrir chat' : 'Minimizar chat'} onClick={() => setMinimized((value) => !value)} className="absolute right-11 top-3 grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-white/10 hover:text-white">{minimized ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</button>

@@ -106,31 +106,88 @@ export interface Dashboard {
   riotAccount: { gameName: string; tagLine: string; region: string } | null;
   stats: {
     ranked: Array<{ queue: string; tier: string; rank: string; leaguePoints: number; wins: number; losses: number; winRate: number }>;
-    recent: { wins: number; losses: number; winRate: number; kda: number; cs: number; avgScore?: number; avgDamage?: number; headshots?: number };
+    recent: RecentStats;
   } | null;
-  matchHistory: Array<{
-    id: string;
-    champion: string;
-    championId: number;
-    championImageUrl?: string | null;
-    win: boolean;
-    kills: number;
-    deaths: number;
-    assists: number;
-    kda: number;
-    cs: number;
-    visionScore: number;
-    score?: number;
-    roundsPlayed?: number;
-    headshots?: number;
-    damage?: number;
-    rank?: string;
-    role: string;
-    queue: string;
-    durationSeconds: number;
-    playedAt: string;
-  }>;
+  matchHistory: MatchSummary[];
   message: string;
+}
+
+export interface ChampionStat {
+  champion: string;
+  imageUrl?: string | null;
+  games: number;
+  wins: number;
+  winRate: number;
+  kda: number;
+}
+
+export interface RoleStat {
+  role: string;
+  games: number;
+  share: number;
+}
+
+export interface RecentStats {
+  games?: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  kda: number;
+  cs: number;
+  csPerMin?: number;
+  avgKills?: number;
+  avgDeaths?: number;
+  avgAssists?: number;
+  killParticipation?: number;
+  champions?: ChampionStat[];
+  roles?: RoleStat[];
+  /** Sólo Valorant */
+  avgScore?: number;
+  avgDamage?: number;
+  headshots?: number;
+}
+
+export interface MatchAsset {
+  name?: string;
+  id?: number;
+  imageUrl: string | null;
+}
+
+export interface MatchSummary {
+  id: string;
+  champion: string;
+  championId: number;
+  championLevel?: number;
+  championImageUrl?: string | null;
+  win: boolean;
+  remake?: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+  kda: number;
+  killParticipation?: number;
+  cs: number;
+  csPerMin?: number;
+  gold?: number;
+  visionScore: number;
+  doubleKills?: number;
+  tripleKills?: number;
+  quadraKills?: number;
+  pentaKills?: number;
+  spells?: MatchAsset[];
+  runes?: MatchAsset[];
+  items?: Array<MatchAsset | null>;
+  trinket?: MatchAsset | null;
+  teammates?: Array<{ puuid: string; name: string; champion: string; championImageUrl: string | null; teamId: number }>;
+  score?: number;
+  roundsPlayed?: number;
+  headshots?: number;
+  damage?: number;
+  rank?: string;
+  role: string;
+  queue: string;
+  durationSeconds: number;
+  playedAt: string;
 }
 
 export interface FriendDashboard {

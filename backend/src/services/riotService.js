@@ -66,9 +66,53 @@ async function dataDragon() {
   if (dataDragonCache) return dataDragonCache;
   const versions = await fetch('https://ddragon.leagueoflegends.com/api/versions.json').then((res) => res.json());
   const version = versions[0];
-  const champions = await fetch(`https://ddragon.leagueoflegends.com/cdn/${version}/data/es_MX/champion.json`).then((res) => res.json());
-  dataDragonCache = { version, champions: Object.values(champions.data) };
+  const base = `https://ddragon.leagueoflegends.com/cdn/${version}`;
+  const [champions, spells, runeTrees] = await Promise.all([
+    fetch(`${base}/data/es_MX/champion.json`).then((res) => res.json()),
+    fetch(`${base}/data/es_MX/summoner.json`).then((res) => res.json()).catch(() => ({ data: {} })),
+    fetch(`${base}/data/es_MX/runesReforged.json`).then((res) => res.json()).catch(() => []),
+  ]);
+
+  // id numérico -> imagen, para resolver hechizos de invocador y runas de cada partida
+  const spellById = new Map(
+    Object.values(spells.data ?? {}).map((spell) => [Number(spell.key), {
+      name: spell.name,
+      imageUrl: `${base}/img/spell/${spell.image.full}`,
+    }]),
+  );
+  const runeById = new Map();
+  for (const tree of runeTrees ?? []) {
+    runeById.set(tree.id, { name: tree.name, imageUrl: `https://ddragon.leagueoflegends.com/cdn/img/${tree.icon}` });
+    for (const slot of tree.slots ?? []) {
+      for (const rune of slot.runes ?? []) {
+        runeById.set(rune.id, { name: rune.name, imageUrl: `https://ddragon.leagueoflegends.com/cdn/img/${rune.icon}` });
+      }
+    }
+  }
+
+  dataDragonCache = { version, base, champions: Object.values(champions.data), spellById, runeById };
   return dataDragonCache;
+}
+
+function itemUrl(dragon, id) {
+  return id ? `${dragon.base}/img/item/${id}.png` : null;
+}
+
+/** Iconos de invocador clásicos de Data Dragon, para el selector de foto de perfil. */
+const PICKABLE_ICON_IDS = [
+  0, 1, 3, 4, 6, 7, 9, 11, 13, 16, 18, 19, 21, 22, 23, 24,
+  26, 27, 28, 29, 3040, 4027, 4028, 4029,
+];
+
+export async function getProfileIconOptions() {
+  const dragon = await dataDragon();
+  return {
+    version: dragon.version,
+    icons: PICKABLE_ICON_IDS.map((id) => ({
+      id,
+      url: `https://ddragon.leagueoflegends.com/cdn/${dragon.version}/img/profileicon/${id}.png`,
+    })),
+  };
 }
 
 export async function resolveRiotAccount(gameName, tagLine, region) {
@@ -120,22 +164,125 @@ function championImage(dragon, championName) {
 function matchSummary(match, puuid, dragon) {
   const participant = match.info.participants.find((item) => item.puuid === puuid);
   if (!participant) return null;
+
+  const durationSeconds = match.info.gameDuration ?? 0;
+  const minutes = Math.max(1, durationSeconds / 60);
+  const cs = participant.totalMinionsKilled + participant.neutralMinionsKilled;
+
+  // Participación en asesinatos del equipo — la métrica "KP" de op.gg
+  const teamKills = match.info.participants
+    .filter((item) => item.teamId === participant.teamId)
+    .reduce((sum, item) => sum + item.kills, 0);
+
+  const teammates = match.info.participants.map((item) => ({
+    puuid: item.puuid,
+    name: item.riotIdGameName || item.summonerName || 'Jugador',
+    champion: item.championName,
+    championImageUrl: championImage(dragon, item.championName),
+    teamId: item.teamId,
+  }));
+
+  const spell = (id) => dragon.spellById.get(id) ?? null;
+  const rune = (id) => dragon.runeById.get(id) ?? null;
+
   return {
     id: match.metadata.matchId,
     champion: participant.championName,
     championId: participant.championId,
+    championLevel: participant.champLevel,
     championImageUrl: championImage(dragon, participant.championName),
     win: participant.win,
+    // Una partida abandonada por desconexión temprana no cuenta como derrota real
+    remake: durationSeconds > 0 && durationSeconds < 300,
     kills: participant.kills,
     deaths: participant.deaths,
     assists: participant.assists,
     kda: Number(((participant.kills + participant.assists) / Math.max(1, participant.deaths)).toFixed(2)),
-    cs: participant.totalMinionsKilled + participant.neutralMinionsKilled,
+    killParticipation: teamKills ? Math.round(((participant.kills + participant.assists) / teamKills) * 100) : 0,
+    cs,
+    csPerMin: Number((cs / minutes).toFixed(1)),
+    gold: participant.goldEarned ?? 0,
+    damage: participant.totalDamageDealtToChampions ?? 0,
     visionScore: participant.visionScore,
+    doubleKills: participant.doubleKills ?? 0,
+    tripleKills: participant.tripleKills ?? 0,
+    quadraKills: participant.quadraKills ?? 0,
+    pentaKills: participant.pentaKills ?? 0,
+    spells: [spell(participant.summoner1Id), spell(participant.summoner2Id)].filter(Boolean),
+    runes: [
+      rune(participant.perks?.styles?.[0]?.selections?.[0]?.perk),
+      rune(participant.perks?.styles?.[1]?.style),
+    ].filter(Boolean),
+    items: [
+      participant.item0, participant.item1, participant.item2,
+      participant.item3, participant.item4, participant.item5,
+    ].map((id) => (id ? { id, imageUrl: itemUrl(dragon, id) } : null)),
+    trinket: participant.item6 ? { id: participant.item6, imageUrl: itemUrl(dragon, participant.item6) } : null,
     role: participant.teamPosition || participant.individualPosition || 'FILL',
     queue: QUEUE_NAMES[match.info.queueId] ?? `Cola ${match.info.queueId}`,
-    durationSeconds: match.info.gameDuration ?? 0,
+    durationSeconds,
     playedAt: new Date(match.info.gameEndTimestamp ?? match.info.gameStartTimestamp).toISOString(),
+    teammates,
+  };
+}
+
+/** Resumen agregado del historial reciente, al estilo del panel lateral de op.gg. */
+function recentAggregate(matches) {
+  if (!matches.length) {
+    return { games: 0, wins: 0, losses: 0, winRate: 0, kda: 0, cs: 0, csPerMin: 0, avgKills: 0, avgDeaths: 0, avgAssists: 0, killParticipation: 0, champions: [], roles: [] };
+  }
+
+  const wins = matches.filter((match) => match.win).length;
+  const sum = (pick) => matches.reduce((total, match) => total + pick(match), 0);
+  const avg = (pick, digits = 1) => Number((sum(pick) / matches.length).toFixed(digits));
+
+  const totalKills = sum((m) => m.kills);
+  const totalDeaths = sum((m) => m.deaths);
+  const totalAssists = sum((m) => m.assists);
+
+  const byChampion = new Map();
+  for (const match of matches) {
+    const entry = byChampion.get(match.champion) ?? {
+      champion: match.champion, imageUrl: match.championImageUrl, games: 0, wins: 0, kills: 0, deaths: 0, assists: 0,
+    };
+    entry.games += 1;
+    entry.wins += match.win ? 1 : 0;
+    entry.kills += match.kills;
+    entry.deaths += match.deaths;
+    entry.assists += match.assists;
+    byChampion.set(match.champion, entry);
+  }
+
+  const byRole = new Map();
+  for (const match of matches) byRole.set(match.role, (byRole.get(match.role) ?? 0) + 1);
+
+  return {
+    games: matches.length,
+    wins,
+    losses: matches.length - wins,
+    winRate: Math.round((wins / matches.length) * 100),
+    // KDA agregado (K+A)/D sobre el total, no el promedio de KDAs — es como lo calcula op.gg
+    kda: Number(((totalKills + totalAssists) / Math.max(1, totalDeaths)).toFixed(2)),
+    avgKills: avg((m) => m.kills),
+    avgDeaths: avg((m) => m.deaths),
+    avgAssists: avg((m) => m.assists),
+    cs: Math.round(sum((m) => m.cs) / matches.length),
+    csPerMin: avg((m) => m.csPerMin),
+    killParticipation: Math.round(sum((m) => m.killParticipation) / matches.length),
+    champions: [...byChampion.values()]
+      .sort((a, b) => b.games - a.games)
+      .slice(0, 3)
+      .map((entry) => ({
+        champion: entry.champion,
+        imageUrl: entry.imageUrl,
+        games: entry.games,
+        wins: entry.wins,
+        winRate: Math.round((entry.wins / entry.games) * 100),
+        kda: Number(((entry.kills + entry.assists) / Math.max(1, entry.deaths)).toFixed(2)),
+      })),
+    roles: [...byRole.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([role, games]) => ({ role, games, share: Math.round((games / matches.length) * 100) })),
   };
 }
 
@@ -144,20 +291,12 @@ export async function getLeagueProfile(puuid, region, selectedQueue = 'solo') {
   const queueId = selectedQueue === 'flex' ? 440 : 420;
   const [ranked, matchIds, dragon] = await Promise.all([
     riotFetch(platform, `/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`),
-    riotFetch(regional, `/lol/match/v5/matches/by-puuid/${encodeURIComponent(puuid)}/ids?queue=${queueId}&start=0&count=5`),
+    riotFetch(regional, `/lol/match/v5/matches/by-puuid/${encodeURIComponent(puuid)}/ids?queue=${queueId}&start=0&count=10`),
     dataDragon(),
   ]);
   const rawMatches = await Promise.all(matchIds.map((id) => riotFetch(regional, `/lol/match/v5/matches/${encodeURIComponent(id)}`)));
   const matches = rawMatches.map((match) => matchSummary(match, puuid, dragon)).filter(Boolean);
-  const wins = matches.filter((match) => match.win).length;
-  const recent = matches.length ? {
-    wins,
-    losses: matches.length - wins,
-    winRate: Math.round((wins / matches.length) * 100),
-    kda: Number((matches.reduce((sum, match) => sum + match.kda, 0) / matches.length).toFixed(2)),
-    cs: Math.round(matches.reduce((sum, match) => sum + match.cs, 0) / matches.length),
-  } : { wins: 0, losses: 0, winRate: 0, kda: 0, cs: 0 };
-  return { ranked: rankedSummary(ranked, selectedQueue), recent, matches };
+  return { ranked: rankedSummary(ranked, selectedQueue), recent: recentAggregate(matches), matches };
 }
 
 export async function getLeagueMatchDetail(matchId, viewerPuuid, region) {

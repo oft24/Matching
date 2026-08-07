@@ -22,14 +22,14 @@ export default function Hero() {
             Conecta con jugadores que comparten tus objetivos, rango y estilo de juego.
           </p>
 
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="stagger grid gap-4 sm:grid-cols-3">
             {FEATURES.map(({ icon: Icon, title, desc }) => (
               <div
                 key={title}
-                className="glass rounded-2xl p-4 hover:bg-white/5 transition-all duration-300 hover:-translate-y-1 group"
+                className="surface-soft card-lift group rounded-2xl p-4"
               >
-                <div className="w-10 h-10 rounded-xl bg-brand-violet/20 flex items-center justify-center mb-3 group-hover:glow-violet transition-shadow">
-                  <Icon className="w-5 h-5 text-brand-violet" />
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-violet/[0.16] text-brand-violet transition-all duration-300 group-hover:scale-110 group-hover:bg-brand-violet/25">
+                  <Icon className="h-[18px] w-[18px]" />
                 </div>
                 <h3 className="font-semibold text-white text-sm mb-1">{title}</h3>
                 <p className="text-xs text-slate-500">{desc}</p>

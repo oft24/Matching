@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { LogIn, LogOut, Mail, Save, Shield, Trophy, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Avatar from './Avatar';
+import AvatarPicker from './AvatarPicker';
+import PageHeader from './PageHeader';
 import ConnectionSettings from './ConnectionSettings';
 import { saveProfile } from '../lib/api';
 
@@ -40,47 +43,35 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
     );
   }
 
-  const avatar = user.avatar ?? `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.username}`;
-
   return (
-    <section className="mb-8">
-      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-        Mi Perfil
-      </h3>
+    <section className="mx-auto mb-8 max-w-5xl">
+      <PageHeader kicker="MI PERFIL" title={user.username} description={user.email} />
 
-      <div className="glass rounded-2xl p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8">
-          <img
-            src={avatar}
-            alt={user.username}
-            className="w-24 h-24 rounded-2xl ring-2 ring-brand-violet/50"
-          />
+      <div className="glass anim-fade-up rounded-2xl p-6 lg:p-8" style={{ animationDelay: '60ms' }}>
+        <div className="mb-7 flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+          <Avatar name={user.username} src={user.avatar} size={88} brand radius={20} />
           <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-2xl font-bold text-white mb-1">{user.username}</h2>
-            <p className="text-slate-400 flex items-center justify-center sm:justify-start gap-2 mb-3">
-              <Mail className="w-4 h-4" /> {user.email}
+            <h2 className="mb-1.5 text-2xl font-bold text-white">{user.username}</h2>
+            <p className="mb-3 flex items-center justify-center gap-2 text-sm text-slate-400 sm:justify-start">
+              <Mail className="h-4 w-4" /> {user.email}
             </p>
-            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-brand-violet/20 text-brand-violet text-sm font-medium">
-                <Trophy className="w-4 h-4" /> Nivel {user.level}
+            <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-brand-violet/[0.16] px-3 py-1.5 text-xs font-semibold text-violet-300">
+                <Trophy className="h-3.5 w-3.5" /> Nivel {user.level}
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm font-medium">
-                <Shield className="w-4 h-4" /> {user.xp} XP
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-400">
+                <Shield className="h-3.5 w-3.5" /> {user.xp} XP
               </span>
             </div>
           </div>
 
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-red-500/30
-              text-red-400 hover:bg-red-500/10 transition-all text-sm font-medium"
-          >
-            <LogOut className="w-4 h-4" />
+          <button onClick={logout} className="danger-button flex items-center gap-2 px-4 py-2.5 text-sm font-semibold">
+            <LogOut className="h-4 w-4" />
             Cerrar sesión
           </button>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-4 pt-6 border-t border-white/8">
+        <div className="stagger grid gap-3.5 border-t border-white/[0.08] pt-6 sm:grid-cols-3">
           <Stat label="Nivel de cuenta" value={String(user.level)} />
           <Stat label="Experiencia" value={`${user.xp} XP`} />
           <Stat label="Estado" value="En línea" accent />
@@ -99,6 +90,8 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
           <button disabled={saving} onClick={async () => { setSaving(true); try { updateUser(await saveProfile(gender || null)); } finally { setSaving(false); } }} className="gradient-btn px-5 py-2.5 rounded-xl text-white font-semibold inline-flex justify-center items-center gap-2 disabled:opacity-50"><Save className="w-4 h-4" />Guardar perfil</button>
         </div>
 
+        <AvatarPicker />
+
         <ConnectionSettings />
       </div>
     </section>
@@ -107,8 +100,8 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="glass rounded-2xl p-4 text-center">
-      <p className="text-xs text-slate-500 mb-1">{label}</p>
+    <div className="surface-soft card-lift rounded-2xl p-4 text-center">
+      <p className="mb-1.5 text-xs text-slate-500">{label}</p>
       <p className={`text-lg font-bold ${accent ? 'text-emerald-400' : 'text-white'}`}>{value}</p>
     </div>
   );

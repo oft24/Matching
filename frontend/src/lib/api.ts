@@ -158,9 +158,22 @@ export async function disconnectProvider(provider: string): Promise<void> {
   await api.delete(`/connections/${provider}`);
 }
 
-export async function saveProfile(gender: AuthUser['gender']): Promise<AuthUser> {
-  const { data } = await api.put<{ user: AuthUser }>('/players/me/profile', { gender });
+export async function saveProfile(gender: AuthUser['gender'], avatar?: string | null): Promise<AuthUser> {
+  const body: { gender: AuthUser['gender']; avatar?: string | null } = { gender };
+  if (avatar !== undefined) body.avatar = avatar;
+  const { data } = await api.put<{ user: AuthUser }>('/players/me/profile', body);
   return data.user;
+}
+
+export interface AvatarOptions {
+  version: string;
+  icons: { id: number; url: string }[];
+  riot: { url: string; label: string } | null;
+}
+
+export async function fetchAvatarOptions(): Promise<AvatarOptions> {
+  const { data } = await api.get<AvatarOptions>('/players/avatar-options');
+  return data;
 }
 
 export async function fetchFriends(): Promise<{ friends: FriendProfile[]; incoming: FriendProfile[]; outgoing: FriendProfile[] }> {

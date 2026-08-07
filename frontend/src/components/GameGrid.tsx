@@ -33,7 +33,7 @@ export default function GameGrid({ games, selected, onSelect, disabled }: GameGr
         <p className="hidden text-sm text-slate-500 sm:block">{games.length} juegos disponibles</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      <div className="stagger grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {games.map((game) => {
           const isSelected = selected === game.id;
           return (
@@ -61,7 +61,7 @@ export default function GameGrid({ games, selected, onSelect, disabled }: GameGr
                 </span>
               </span>
               {isSelected && (
-                <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-white shadow-lg shadow-indigo-500/30">
+                <span className="anim-pop absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-400 text-white shadow-lg shadow-indigo-500/40">
                   <Check className="h-3 w-3" strokeWidth={3} />
                 </span>
               )}

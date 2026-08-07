@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, Check, Gamepad2, Loader2, MessageCircle, Search, Star, Swords, Target, Trophy, UserMinus, UserPlus, X } from 'lucide-react';
+import Avatar from './Avatar';
+import PageHeader from './PageHeader';
 import { acceptFriend, addFriend, fetchFriendDashboard, fetchFriendProfile, fetchFriends, rateFriend, removeFriend, searchPlayers } from '../lib/api';
 import type { FriendDashboard, FriendProfile, FriendRating } from '../types';
 
@@ -43,15 +45,15 @@ export default function FriendsPage() {
   };
 
   return <section className="mb-8 max-w-6xl mx-auto">
-    <div className="mb-5 flex items-end justify-between gap-4"><div><p className="mb-1 text-xs font-semibold uppercase text-brand-violet">Tu squad</p><h2 className="text-2xl font-bold text-white">Amigos</h2></div><span className="text-sm text-slate-400">{friends.length} contactos</span></div>
-    <div className="relative mb-6"><Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar jugadores por nombre..." className="glass w-full rounded-xl border border-white/10 py-3 pl-12 pr-4 text-white focus:border-brand-violet/60 focus:outline-none" /></div>
+    <PageHeader kicker="TU SQUAD" title="Amigos" action={<span className="text-sm text-slate-500">{friends.length} contactos</span>} />
+    <div className="anim-fade-up relative mb-6" style={{ animationDelay: '60ms' }}><Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar jugadores por nombre..." className="w-full rounded-xl border border-white/10 bg-[#0b1220] py-3 pl-11 pr-4 text-sm text-white transition-colors placeholder:text-slate-600 focus:border-brand-violet/60 focus:outline-none" /></div>
 
     {!!incoming.length && <List title={`Solicitudes recibidas (${incoming.length})`} people={incoming} renderAction={(person) => <div className="flex gap-2"><IconButton title="Aceptar" onClick={() => accept(person)} accent><Check className="h-4 w-4" /></IconButton><IconButton title="Rechazar" onClick={() => remove(person)}><X className="h-4 w-4" /></IconButton></div>} />}
     {!!outgoing.length && <List title={`Solicitudes enviadas (${outgoing.length})`} people={outgoing} renderAction={(person) => <button onClick={() => remove(person)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400 hover:text-white">Cancelar</button>} />}
     {query.trim().length >= 2 && <List title="Resultados en Matching" people={results} empty="No encontramos jugadores con ese nombre." renderAction={(person) => <RequestAction person={person} onSend={sendRequest} onAccept={accept} onRemove={remove} />} />}
 
     <h3 className="mb-3 text-sm text-slate-400">Tus amigos</h3>
-    {loading ? <Loader2 className="h-6 w-6 animate-spin text-brand-violet" /> : friends.length ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{friends.map((person) => <PersonCard key={person.id} person={person} onOpen={setSelected} action={<IconButton title="Eliminar amigo" onClick={() => remove(person)}><UserMinus className="h-4 w-4" /></IconButton>} />)}</div> : <div className="glass rounded-xl p-8 text-center text-slate-400">Busca jugadores y envía una solicitud. Serán amigos cuando la acepten.</div>}
+    {loading ? <Loader2 className="h-6 w-6 animate-spin text-brand-violet" /> : friends.length ? <div className="stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{friends.map((person) => <PersonCard key={person.id} person={person} onOpen={setSelected} action={<IconButton title="Eliminar amigo" onClick={() => remove(person)}><UserMinus className="h-4 w-4" /></IconButton>} />)}</div> : <div className="glass rounded-xl p-8 text-center text-slate-400">Busca jugadores y envía una solicitud. Serán amigos cuando la acepten.</div>}
     {selected && <ProfileDialog person={selected} onClose={() => setSelected(null)} />}
   </section>;
 }
@@ -68,7 +70,7 @@ function RequestAction({ person, onSend, onAccept, onRemove }: { person: FriendP
 }
 
 function PersonCard({ person, onOpen, action }: { person: FriendProfile; onOpen?: (p: FriendProfile) => void; action: React.ReactNode }) {
-  return <article className="glass flex items-center gap-3 rounded-xl p-4"><button disabled={!onOpen} onClick={() => onOpen?.(person)} aria-label={onOpen ? `Ver perfil de ${person.username}` : undefined} className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left disabled:cursor-default"><img src={person.avatar} alt="" className="h-12 w-12 rounded-lg object-cover ring-1 ring-white/10" /><span className="min-w-0"><strong className="block truncate text-white group-hover:text-violet-300">{person.username}</strong><small className="text-slate-500">Nivel {person.level}{person.riot ? ` · ${person.riot.gameName}#${person.riot.tagLine}` : ''}</small></span></button>{action}</article>;
+  return <article className="surface card-lift flex items-center gap-3 rounded-2xl p-3.5"><button disabled={!onOpen} onClick={() => onOpen?.(person)} aria-label={onOpen ? `Ver perfil de ${person.username}` : undefined} className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left disabled:cursor-default"><Avatar name={person.username} src={person.avatar} size={46} /><span className="min-w-0"><strong className="block truncate text-sm text-white transition-colors group-hover:text-violet-300">{person.username}</strong><small className="text-xs text-slate-500">Nivel {person.level}{person.riot ? ` · ${person.riot.gameName}#${person.riot.tagLine}` : ''}</small></span></button>{action}</article>;
 }
 
 function IconButton({ title, onClick, accent, children }: { title: string; onClick: () => void; accent?: boolean; children: React.ReactNode }) {
@@ -138,7 +140,7 @@ function ProfileDialog({ person, onClose }: { person: FriendProfile; onClose: ()
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-6" onClick={onClose}>
     <div role="dialog" aria-modal="true" aria-labelledby="friend-profile-title" className="glass max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl" onClick={(event) => event.stopPropagation()}>
       <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/10 bg-[#111827]/95 p-5 backdrop-blur-xl sm:p-6">
-        <div className="flex min-w-0 gap-4"><img src={profile.avatar} alt="" className="h-16 w-16 rounded-lg object-cover ring-1 ring-white/10 sm:h-20 sm:w-20" /><div className="min-w-0"><h3 id="friend-profile-title" className="truncate text-xl font-bold text-white sm:text-2xl">{profile.username}</h3><p className="mt-1 text-sm text-slate-400">Nivel {profile.level} · {genderLabel(profile.gender)}</p>{profile.riot && <p className="mt-1 truncate text-sm text-indigo-300">{profile.riot.gameName}#{profile.riot.tagLine} · {profile.riot.region?.toUpperCase()}</p>}</div></div>
+        <div className="flex min-w-0 gap-4"><Avatar name={profile.username} src={profile.avatar} size={76} radius={16} /><div className="min-w-0"><h3 id="friend-profile-title" className="truncate text-xl font-bold text-white sm:text-2xl">{profile.username}</h3><p className="mt-1 text-sm text-slate-400">Nivel {profile.level} · {genderLabel(profile.gender)}</p>{profile.riot && <p className="mt-1 truncate text-sm text-indigo-300">{profile.riot.gameName}#{profile.riot.tagLine} · {profile.riot.region?.toUpperCase()}</p>}</div></div>
         <button onClick={onClose} title="Cerrar perfil" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 text-slate-400 hover:bg-white/5 hover:text-white"><X className="h-4 w-4" /></button>
       </header>
 

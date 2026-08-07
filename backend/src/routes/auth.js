@@ -6,10 +6,6 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-function avatarUrl(username) {
-  return `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(username)}`;
-}
-
 function dbNotReady(_req, res) {
   return res.status(503).json({
     error: 'Base de datos no configurada',
@@ -43,7 +39,8 @@ router.post('/register', async (req, res) => {
         username: username.trim(),
         email: email.trim().toLowerCase(),
         password: hash,
-        avatar: avatarUrl(username.trim()),
+        // Sin icono: la interfaz muestra iniciales hasta que se conecte Riot o se elija uno.
+        avatar: null,
       },
       select: {
         id: true,
@@ -86,7 +83,7 @@ router.post('/login', async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
-      avatar: user.avatar ?? avatarUrl(user.username),
+      avatar: user.avatar,
       gender: user.gender,
       level: user.level,
       xp: user.xp,

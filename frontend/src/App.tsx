@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
+import IconRail from './components/IconRail';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import GameGrid from './components/GameGrid';
@@ -8,6 +9,8 @@ import GuestLanding from './components/GuestLanding';
 import DashboardPanel from './components/DashboardPanel';
 import ProfilePage from './components/ProfilePage';
 import FriendsPage from './components/FriendsPage';
+import GroupsPage from './components/GroupsPage';
+import SettingsPage from './components/SettingsPage';
 import MatchChatDock from './components/MatchChatDock';
 import MessagesPage from './components/MessagesPage';
 import LoginModal from './components/LoginModal';
@@ -16,32 +19,8 @@ import { useAuth } from './context/AuthContext';
 import { fetchDashboard, fetchGames } from './lib/api';
 import { DEFAULT_GAMES } from './data/games';
 import { GAME_RANKS } from './data/gameRanks';
+import { DEFAULT_SEARCH_FILTERS } from './data/searchDefaults';
 import type { Dashboard, Game, SearchFilters } from './types';
-
-const DEFAULT_FILTERS: SearchFilters = {
-  game: 'lol',
-  region: 'LAN',
-  language: 'Español',
-  matchType: 'Ranked',
-  rank: 'Gold',
-  role: 'Any',
-  age: '18-25',
-  preferredGender: 'any',
-  verifiedOnly: false,
-  playstyle: 'Competitivo',
-  objectives: 'Subir de rango',
-  activityLevel: 'Alto',
-  hasMic: true,
-};
-
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="glass rounded-2xl p-12 text-center mb-8">
-      <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-      <p className="text-slate-400">Próximamente disponible.</p>
-    </div>
-  );
-}
 
 export default function App() {
   const { isAuthenticated, user } = useAuth();
@@ -50,7 +29,7 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'register'>('login');
   const [games, setGames] = useState<Game[]>(DEFAULT_GAMES);
-  const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [dashboardGame, setDashboardGame] = useState<'lol' | 'valorant'>('lol');
   const [dashboardQueue, setDashboardQueue] = useState<'solo' | 'flex'>('solo');
@@ -89,11 +68,10 @@ export default function App() {
   const renderAuthenticatedContent = () => {
     if (showProfile) return <ProfilePage onOpenLogin={() => openLogin()} />;
     if (showDashboard) return <DashboardPanel data={dashboard} game={dashboardGame} onGameChange={setDashboardGame} queue={dashboardQueue} onQueueChange={setDashboardQueue} />;
-    if (activeNav === 'grupos') return <ComingSoon title="Grupos" />;
+    if (activeNav === 'grupos') return <GroupsPage />;
     if (activeNav === 'amigos') return <FriendsPage />;
     if (activeNav === 'mensajes') return <MessagesPage />;
-    if (activeNav === 'eventos') return <ComingSoon title="Eventos" />;
-    if (activeNav === 'ajustes') return <ComingSoon title="Ajustes" />;
+    if (activeNav === 'ajustes') return <SettingsPage />;
 
     if (showBuscar) {
       return (
@@ -119,17 +97,31 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-brand-dark">
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Rail + panel viven a la izquierda y ocupan toda la altura; la cabecera va dentro del contenido. */}
+      {isAuthenticated && (
+        <>
+          <IconRail active={activeNav} onNavigate={setActiveNav} />
+          <Sidebar
+            active={activeNav}
+            onNavigate={setActiveNav}
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col">
         <Header
           level={dashboard?.level ?? user?.level ?? 1}
           xp={dashboard?.xp ?? user?.xp ?? 0}
           xpToNext={dashboard?.xpToNext ?? 100}
           onMenuClick={isAuthenticated ? () => setSidebarOpen(true) : undefined}
           onOpenLogin={() => openLogin()}
+          compact={isAuthenticated}
         />
 
         <div className="flex flex-1">
-          <main className={`flex-1 overflow-y-auto ${isAuthenticated ? 'p-4 lg:p-6' : 'px-4 sm:px-6 lg:px-8'}`}>
+          <main className={`min-w-0 flex-1 overflow-y-auto ${isAuthenticated ? 'p-4 lg:p-6' : 'px-4 sm:px-6 lg:px-8'}`}>
             {!isAuthenticated ? (
               <GuestLanding
                 games={games}
@@ -138,26 +130,19 @@ export default function App() {
                 onOpenLogin={() => openLogin()}
               />
             ) : (
-              renderAuthenticatedContent()
+              <div key={activeNav} className="page-view mx-auto w-full max-w-6xl">
+                {renderAuthenticatedContent()}
+              </div>
             )}
           </main>
 
           {isAuthenticated && showBuscar && (
-            <div className="p-4 lg:p-6 pr-0 hidden xl:block">
+            <div className="hidden p-4 pl-0 lg:p-6 lg:pl-0 xl:block">
               <QuickSearch filters={filters} />
             </div>
           )}
         </div>
       </div>
-
-      {isAuthenticated && (
-        <Sidebar
-          active={activeNav}
-          onNavigate={setActiveNav}
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
-      )}
 
       <LoginModal
         open={loginOpen}

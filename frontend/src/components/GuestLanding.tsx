@@ -10,6 +10,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import GameGrid from './GameGrid';
+import Avatar from './Avatar';
 import type { Game } from '../types';
 
 interface GuestLandingProps {
@@ -69,7 +70,7 @@ export default function GuestLanding({ games, selected, onSelect, onOpenLogin }:
             Conecta con jugadores que comparten tu juego, rango, rol, plataforma y estilo de juego.
           </p>
 
-          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3">
+          <div className="stagger mt-7 flex flex-wrap gap-x-6 gap-y-3">
             {PROOF_POINTS.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2 text-sm text-slate-300">
                 <Icon className="h-4 w-4 text-indigo-400" />
@@ -123,7 +124,7 @@ export default function GuestLanding({ games, selected, onSelect, onOpenLogin }:
           {STEPS.map(({ number, icon: Icon, title, description }) => (
             <article key={number} className="group relative bg-[#101827] p-6 transition-colors duration-200 hover:bg-[#141e30]">
               <div className="mb-8 flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.035]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.035] transition-transform duration-300 group-hover:scale-110">
                   <Icon className="h-5 w-5 text-indigo-300" />
                 </div>
                 <span className="font-mono text-xs text-slate-600">{number}</span>
@@ -144,7 +145,7 @@ export default function GuestLanding({ games, selected, onSelect, onOpenLogin }:
           <p className="mt-4 text-sm leading-7 text-slate-400 sm:text-base">
             Matching compara las preferencias que sí cambian una partida: nivel, rol, comunicación, objetivos y compatibilidad.
           </p>
-          <div className="mt-6 space-y-3">
+          <div className="stagger mt-6 space-y-3">
             {['Preferencias claras antes de conectar', 'Aceptación mutua y contacto directo', 'Tu búsqueda permanece activa hasta hacer match'].map((item) => (
               <div key={item} className="flex items-center gap-3 text-sm text-slate-300">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
@@ -165,11 +166,7 @@ export default function GuestLanding({ games, selected, onSelect, onOpenLogin }:
             </span>
           </div>
           <div className="flex items-center gap-4 p-5">
-            <img
-              src="https://api.dicebear.com/9.x/avataaars/svg?seed=MatchingDemo"
-              alt="Avatar de demostración"
-              className="h-14 w-14 rounded-lg bg-slate-800 ring-1 ring-white/10"
-            />
+            <Avatar name="AlexR" size={56} radius={14} />
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-white">AlexR</h3>
               <p className="mt-1 text-sm text-slate-400">Diamond II · Mid / Support</p>

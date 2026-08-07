@@ -59,11 +59,11 @@ export function TrustFooter() {
   ];
 
   return (
-    <div className="grid sm:grid-cols-3 gap-4 mt-8">
+    <div className="stagger mt-8 grid gap-4 sm:grid-cols-3">
       {items.map(({ icon: Icon, title, desc, color }) => (
-        <div key={title} className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-white/5 transition-colors">
-          <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center ${color}`}>
-            <Icon className="w-5 h-5" />
+        <div key={title} className="surface-soft card-lift group flex items-center gap-4 rounded-2xl p-4">
+          <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/[0.04] transition-transform duration-300 group-hover:scale-110 ${color}`}>
+            <Icon className="h-[18px] w-[18px]" />
           </div>
           <div>
             <h4 className="font-semibold text-white text-sm">{title}</h4>

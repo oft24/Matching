@@ -9,7 +9,12 @@ import {
   leaveQueue,
   rejectMatch,
 } from '../lib/api';
+import { DEFAULT_SEARCH_FILTERS } from '../data/searchDefaults';
 import type { QueueStatus, SearchFilters } from '../types';
+
+function formatElapsed(seconds: number) {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
 
 interface LiveMatchmakingProps {
   filters: SearchFilters;
@@ -108,18 +113,29 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
   const isSearching = status.status === 'searching';
   const isLocked = isSearching || status.status === 'pending';
   useEffect(() => { onLockChange?.(isLocked); }, [isLocked, onLockChange]);
+
+  // Cronómetro de cola: se reinicia cada vez que entra o sale de búsqueda
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!isSearching) return setElapsed(0);
+    const timer = window.setInterval(() => setElapsed((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [isSearching]);
+
   const showPopup = status.status === 'pending'
     && status.matchId !== dismissedMatchId;
 
   return (
     <section className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
-          Matchmaking en vivo
-        </h3>
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <p className="section-kicker">PASO 02</p>
+          <h3 className="mt-2 text-xl font-bold text-white">Configura tu búsqueda</h3>
+        </div>
         {isSearching && (
-          <span className="flex items-center gap-2 text-sm text-brand-violet animate-pulse">
-            <Radio className="w-4 h-4" /> Buscando jugador...
+          <span className="flex items-center gap-2 rounded-full border border-brand-violet/30 bg-brand-violet/10 px-3 py-1.5 text-xs font-semibold text-violet-300">
+            <span className="status-dot h-1.5 w-1.5 rounded-full bg-violet-300 text-violet-300" />
+            En cola · {formatElapsed(elapsed)}
           </span>
         )}
       </div>
@@ -131,38 +147,48 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
         loading={loading}
         hideSearchButton
         disabled={isLocked}
+        defaults={DEFAULT_SEARCH_FILTERS}
       />
 
-      <div className="flex gap-3 mt-4">
+      <div className="mt-4 flex gap-3">
         {!isSearching && status.status !== 'pending' ? (
           <button
             onClick={handleStartSearch}
             disabled={loading}
-            className="gradient-btn flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl
-              text-white font-bold text-sm disabled:opacity-50"
+            className="primary-button flex flex-1 items-center justify-center gap-2 py-4 text-sm font-bold tracking-wide disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radio className="w-4 h-4" />}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Radio className="h-4 w-4" />}
             BUSCAR JUGADOR
           </button>
         ) : isSearching ? (
           <button
             onClick={handleStopSearch}
             disabled={loading}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-red-500/30
-              text-red-400 hover:bg-red-500/10 font-bold text-sm disabled:opacity-50"
+            className="danger-button flex flex-1 items-center justify-center gap-2 py-4 text-sm font-bold tracking-wide disabled:opacity-50"
           >
-            <Square className="w-4 h-4" /> CANCELAR BÚSQUEDA
+            <Square className="h-4 w-4" /> CANCELAR BÚSQUEDA
           </button>
-        ) : <button disabled className="flex-1 rounded-2xl border border-brand-violet/20 py-3 text-sm font-bold text-brand-violet opacity-70">MATCH PENDIENTE</button>}
+        ) : (
+          <button disabled className="flex-1 rounded-xl border border-brand-violet/20 py-4 text-sm font-bold text-brand-violet opacity-70">
+            MATCH PENDIENTE
+          </button>
+        )}
       </div>
 
       {isSearching && (
-        <div className="glass rounded-2xl p-8 text-center mt-6">
-          <div className="w-12 h-12 border-2 border-brand-violet border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white font-medium mb-1">Esperando a otro jugador en cola...</p>
-          <p className="text-slate-500 text-sm">
+        <div className="surface-soft anim-fade-up mt-6 rounded-2xl p-10 text-center">
+          <div className="radar mx-auto mb-5 h-16 w-16">
+            <span className="radar-ring" />
+            <span className="radar-ring" />
+            <span className="radar-ring" />
+            <span className="radar-sweep" />
+            <span className="h-12 w-12 animate-spin rounded-full border-2 border-brand-violet border-t-transparent" />
+          </div>
+          <p className="mb-1 font-semibold text-white">Esperando a otro jugador en cola...</p>
+          <p className="text-sm text-slate-500">
             Cuando alguien con filtros compatibles también busque, verás su perfil aquí.
           </p>
+          <p className="mt-4 text-xs text-slate-600">Tiempo en cola: {formatElapsed(elapsed)}</p>
         </div>
       )}
 
