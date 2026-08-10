@@ -9,16 +9,18 @@ interface GameGridProps {
 }
 
 const GAME_IMAGES: Record<string, string> = {
-  lol: '/games/lol.jpg',
-  valorant: '/games/valorant.png',
-  apex: '/games/apex.jpg',
-  fortnite: '/games/fortnite.png',
-  roblox: '/games/roblox.png',
-  'rocket-league': '/games/rocket-league.jpg',
-  overwatch: '/games/overwatch.jpg',
-  cs2: '/games/cs2.jpg',
-  dota2: '/games/dota2.jpg',
+  lol: 'games/lol.jpg',
+  valorant: 'games/valorant.png',
+  apex: 'games/apex.jpg',
+  fortnite: 'games/fortnite.png',
+  roblox: 'games/roblox.png',
+  'rocket-league': 'games/rocket-league.jpg',
+  overwatch: 'games/overwatch.jpg',
+  cs2: 'games/cs2.jpg',
+  dota2: 'games/dota2.jpg',
 };
+
+const publicAsset = (asset: string) => `${import.meta.env.BASE_URL}${asset}`;
 
 export default function GameGrid({ games, selected, onSelect, disabled }: GameGridProps) {
   return (
@@ -48,7 +50,7 @@ export default function GameGrid({ games, selected, onSelect, disabled }: GameGr
               style={{ '--game-color': game.color } as React.CSSProperties}
             >
               <img
-                src={GAME_IMAGES[game.id]}
+                src={publicAsset(GAME_IMAGES[game.id])}
                 alt=""
                 loading="lazy"
                 className="game-card-image"

@@ -46,19 +46,6 @@
   from { opacity: 0; transform: translateY(-12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes match-left-in {
-  from { opacity: 0; transform: translateX(-80px) rotate(-16deg) scale(.85); }
-  to { opacity: 1; transform: translateX(0) rotate(-6deg) scale(1); }
-}
-@keyframes match-right-in {
-  from { opacity: 0; transform: translateX(80px) rotate(16deg) scale(.85); }
-  to { opacity: 1; transform: translateX(0) rotate(6deg) scale(1); }
-}
-@keyframes match-link-pop {
-  0% { opacity: 0; transform: translateX(-50%) scale(.2); }
-  65% { opacity: 1; transform: translateX(-50%) scale(1.18); }
-  100% { opacity: 1; transform: translateX(-50%) scale(1); }
-}
 
 /* ============================================================
    Base
@@ -519,10 +506,25 @@ button:disabled { cursor: not-allowed; }
 /* ============================================================
    Match — la pantalla principal de la app
    ============================================================ */
+/* Overlay de match confirmado (MatchFoundOverlay) */
+@keyframes match-found-panel-in {
+  from { opacity: 0; transform: scale(.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes match-found-ring-pulse {
+  0%, 100% { opacity: .25; transform: translate(-50%, -50%) scale(.82); }
+  50% { opacity: .75; transform: translate(-50%, -50%) scale(1.08); }
+}
+@keyframes match-found-avatar-in {
+  from { opacity: 0; transform: scale(.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+.match-found-panel { animation: match-found-panel-in 360ms cubic-bezier(.2,.8,.2,1) both; }
+.match-found-ring { animation: match-found-ring-pulse 1.8s ease-in-out infinite; }
+.match-found-avatar { animation: match-found-avatar-in 420ms ease-out both; }
+.match-found-avatar-delay { animation-delay: 120ms; }
+
 .match-detail-expand { animation: match-detail-expand 220ms ease-out; transform-origin: top; }
-.match-avatar-left { animation: match-left-in 620ms cubic-bezier(.2,.8,.2,1) both; }
-.match-avatar-right { animation: match-right-in 620ms cubic-bezier(.2,.8,.2,1) both; }
-.match-link { animation: match-link-pop 520ms 380ms cubic-bezier(.2,.8,.2,1) both; }
 
 @keyframes match-backdrop-in { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; backdrop-filter: blur(6px); } }
 @keyframes match-card-in {
@@ -530,53 +532,17 @@ button:disabled { cursor: not-allowed; }
   60% { transform: translateY(-4px) scale(1.01); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes match-title-in {
-  0% { opacity: 0; transform: scale(0.6); letter-spacing: 0.3em; }
-  55% { opacity: 1; transform: scale(1.06); }
-  100% { opacity: 1; transform: scale(1); letter-spacing: -0.01em; }
-}
-@keyframes match-halo {
-  0% { transform: scale(0.5); opacity: 0.85; }
-  100% { transform: scale(2.6); opacity: 0; }
-}
-@keyframes confetti-fall {
-  0% { opacity: 0; transform: translate3d(0, -40px, 0) rotate(0deg); }
-  12% { opacity: 1; }
-  100% { opacity: 0; transform: translate3d(var(--drift, 0), 320px, 0) rotate(var(--spin, 540deg)); }
-}
-@keyframes chat-reveal { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 /* Salida neutra: la tarjeta se retira hacia el fondo, sin deslizamiento lateral */
 @keyframes match-card-out { to { opacity: 0; transform: translateY(10px) scale(0.94); } }
 @keyframes waiting-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 
 .match-backdrop { animation: match-backdrop-in 300ms ease-out both; }
 .match-card { animation: match-card-in 480ms cubic-bezier(0.22, 0.8, 0.28, 1) both; }
-.match-title { animation: match-title-in 620ms 200ms cubic-bezier(0.22, 0.8, 0.28, 1) both; }
 .match-kicker { animation: fade-up 460ms 120ms cubic-bezier(0.22, 0.8, 0.28, 1) both; }
 .match-sub { animation: fade-up 460ms 420ms cubic-bezier(0.22, 0.8, 0.28, 1) both; }
 
 /* Halos que salen del corazón al confirmarse el match */
-.match-halo {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  border: 2px solid rgba(139, 92, 246, 0.65);
-  animation: match-halo 1.5s 420ms cubic-bezier(0.24, 0, 0.38, 1) infinite;
-  pointer-events: none;
-}
-.match-halo:nth-of-type(2) { animation-delay: 900ms; }
 
-.confetti-piece {
-  position: absolute;
-  top: 0;
-  width: 8px;
-  height: 12px;
-  border-radius: 2px;
-  animation: confetti-fall 2.4s ease-in forwards;
-  pointer-events: none;
-}
-
-.match-chat-reveal { animation: chat-reveal 460ms cubic-bezier(0.22, 0.8, 0.28, 1) both; }
 .match-card-out { animation: match-card-out 260ms cubic-bezier(0.4, 0, 1, 1) both; }
 
 /* Botones circulares de decisión, al estilo de las tarjetas de Tinder */
