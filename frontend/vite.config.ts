@@ -3,11 +3,17 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // El build de escritorio se carga por file:// dentro de Electron: rutas relativas
+  // y sin service worker (no se registran en file://, sólo daría errores en consola).
+  const desktop = mode === 'desktop';
+
+  return {
+  base: desktop ? './' : '/',
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+    !desktop && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
@@ -84,11 +90,12 @@ export default defineConfig({
       },
       devOptions: { enabled: false },
     }),
-  ],
+  ].filter(Boolean),
   server: {
     port: 5173,
     proxy: {
       '/api': 'http://localhost:4000',
     },
   },
+  };
 });

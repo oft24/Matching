@@ -607,6 +607,26 @@ button:disabled { cursor: not-allowed; }
 }
 
 /* ============================================================
+   Escritorio (Electron) — la cabecera hace de barra de título
+   ============================================================ */
+/* `data-desktop` lo pone desktop/preload.cjs al cargar el documento. */
+[data-desktop='true'] header {
+  -webkit-app-region: drag;
+  /* Hueco para los controles de ventana que Windows dibuja arriba a la derecha */
+  padding-right: 148px;
+}
+/* Lo interactivo debe seguir siendo clicable, no zona de arrastre */
+[data-desktop='true'] header button,
+[data-desktop='true'] header a,
+[data-desktop='true'] header input {
+  -webkit-app-region: no-drag;
+}
+/* Sin rebote elástico ni selección accidental: se comporta como app nativa */
+[data-desktop='true'] body {
+  overscroll-behavior: none;
+}
+
+/* ============================================================
    Accesibilidad y responsive
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {

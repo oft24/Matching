@@ -2,15 +2,59 @@
   "name": "matching",
   "version": "1.0.0",
   "private": true,
+  "main": "desktop/main.cjs",
   "description": "Plataforma de matchmaking para videojuegos",
+  "author": "oft24",
   "scripts": {
     "dev": "concurrently -n frontend,backend,python -c cyan,green,yellow \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\" \"npm run dev:python\"",
     "dev:python": "python -m uvicorn app.main:app --reload --port 8001 --app-dir services/python",
     "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend",
     "db:setup": "npm run db:generate --prefix backend && npm run db:push --prefix backend",
-    "db:verify": "node backend/scripts/verify-db.js"
+    "db:verify": "node backend/scripts/verify-db.js",
+    "desktop:dev": "concurrently -k \"npm run dev --prefix frontend -- --host 127.0.0.1 --port 5174\" \"wait-on http://127.0.0.1:5174 && electron . --dev-url http://127.0.0.1:5174\"",
+    "desktop:icon": "node desktop/generate-icon.cjs",
+    "desktop:build:web": "npm run build --prefix frontend -- --mode desktop && npm run desktop:icon",
+    "desktop:smoke": "npm run desktop:build:web && electron . --smoke-test",
+    "desktop:unpacked": "npm run desktop:build:web && electron-builder --dir --win",
+    "desktop:dist": "npm run desktop:build:web && electron-builder --win nsis"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3",
+    "sharp": "^0.35.3",
+    "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.matching.desktop",
+    "productName": "Matching",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop/**/*",
+      "frontend/dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "desktop/assets/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Matching-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Matching"
+    }
   }
 }
