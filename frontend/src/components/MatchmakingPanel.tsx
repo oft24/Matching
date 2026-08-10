@@ -191,7 +191,7 @@ function Segmented({ options, value, onChange }: {
             type="button"
             onClick={() => onChange(option.value)}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-200
-              ${active ? 'bg-brand-violet text-white shadow-[0_4px_14px_rgba(124,58,237,0.35)]' : 'text-slate-400 hover:text-white'}`}
+              ${active ? 'bg-brand-violet text-white ' : 'text-slate-400 hover:text-white'}`}
           >
             {option.icon}
             {option.label}

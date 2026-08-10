@@ -120,7 +120,7 @@ function OptionButton({
       onClick={onClick}
       className={`relative rounded-xl border p-0.5 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60
         ${selected
-          ? 'border-brand-violet shadow-[0_0_0_2px_rgba(124,58,237,0.35)]'
+          ? 'border-brand-violet ring-1 ring-[var(--color-accent)]'
           : highlight
             ? 'border-brand-violet/40 hover:border-brand-violet/70'
             : 'border-white/10 hover:border-white/30'}`}
