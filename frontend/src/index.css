@@ -1,16 +1,65 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Tokens — alineados con el diseño de Claude Design
+   Nocturne — tokens del sistema de diseño (Claude Design)
+   Fondo azul-grisáceo casi neutro, un único acento usado como línea
+   y resplandor (nunca como relleno), radios de 8px y escala compacta.
    ============================================================ */
+:root {
+  --color-bg: #161826;
+  --color-surface: #232532;
+  --color-text: #e9e9ed;
+  --color-accent: #9184d9;
+  --color-divider: color-mix(in srgb, #e9e9ed 16%, transparent);
+
+  /* Rampas tonales en OKLCH sobre una escala de luminosidad compartida */
+  --color-neutral-100: #f3f5fe;
+  --color-neutral-200: #e4e7f5;
+  --color-neutral-300: #cfd3e5;
+  --color-neutral-400: #b2b6ca;
+  --color-neutral-500: #9397ab;
+  --color-neutral-600: #75798c;
+  --color-neutral-700: #595d6c;
+  --color-neutral-800: #3f424d;
+  --color-neutral-900: #292b31;
+
+  --color-accent-100: #f5f4ff;
+  --color-accent-200: #e7e5fe;
+  --color-accent-300: #d2cefd;
+  --color-accent-400: #b5abfc;
+  --color-accent-500: #968ae0;
+  --color-accent-600: #796cbf;
+  --color-accent-700: #5d5294;
+  --color-accent-800: #423a6a;
+  --color-accent-900: #2b2741;
+
+  --space-1: 2.8px;
+  --space-2: 5.6px;
+  --space-3: 8.4px;
+  --space-4: 11.2px;
+  --space-6: 16.8px;
+  --space-8: 22.4px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* En fondo oscuro la elevación es un borde fino más oscuridad ambiental */
+  --shadow-sm: 0 0 0 1px #3f424d;
+  --shadow-md: 0 0 0 1px #595d6c, 0 6px 18px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 0 0 1px #9397ab, 0 16px 40px rgba(0, 0, 0, 0.65);
+}
+
 @theme {
-  --color-brand-violet: #7c3aed;
-  --color-brand-blue: #3b82f6;
-  --color-brand-indigo: #818cf8;
-  --color-brand-dark: #070b14;
-  --color-brand-surface: #101827;
-  --color-brand-panel: rgba(17, 24, 39, 0.7);
-  --color-brand-border: rgba(148, 163, 184, 0.1);
+  /* Los nombres de marca se mantienen para no reescribir cada utilidad,
+     pero ahora resuelven a la paleta Nocturne (acento único). */
+  --color-brand-violet: #9184d9;
+  --color-brand-blue: #968ae0;
+  --color-brand-indigo: #b5abfc;
+  --color-brand-dark: #161826;
+  --color-brand-surface: #232532;
+  --color-brand-panel: #232532;
+  --color-brand-border: color-mix(in srgb, #e9e9ed 16%, transparent);
   --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
 
   --animate-float: float 4s ease-in-out infinite;
@@ -50,117 +99,122 @@
 /* ============================================================
    Base
    ============================================================ */
-* { box-sizing: border-box; letter-spacing: -0.01em; }
-html { background: #070b14; }
+* { box-sizing: border-box; letter-spacing: -0.015em; }
+/* Nocturne: la jerarquía es tamaño y espacio, no peso — los títulos no pasan de 500.
+   Se listan con las utilidades para ganar en especificidad a `font-black` y compañía. */
+h1, h2, h3, h4, h5, h6,
+h1.font-black, h2.font-black, h3.font-black, h4.font-black,
+h1.font-extrabold, h2.font-extrabold, h3.font-extrabold, h4.font-extrabold,
+h1.font-bold, h2.font-bold, h3.font-bold, h4.font-bold {
+  font-weight: 500;
+  line-height: 1.12;
+}
+/* Fuera de los títulos, el peso alto se atenúa a 600 (chrome de interfaz) */
+.font-black, .font-extrabold { font-weight: 600; }
+html { background: var(--color-bg); }
 body {
   margin: 0;
   min-width: 320px;
   overflow-x: hidden;
   font-family: var(--font-sans);
-  background: #070b14;
-  color: #f1f5f9;
+  background: var(--color-bg);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
 }
 #root { width: calc(100% / 1.1); min-height: calc(100vh / 1.1); margin-inline: auto; zoom: 1.1; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
-::selection { background: rgba(124, 58, 237, 0.35); color: #fff; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { border-radius: 4px; background: rgba(148, 163, 184, 0.25); }
 ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
 
 /* ============================================================
-   Superficies
+   Superficies — rellenas, sin cristal ni degradados
    ============================================================ */
-.glass {
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(16px);
-}
+.glass,
 .surface {
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  background: #101827;
+  border: none;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 .surface-soft {
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  background: rgba(255, 255, 255, 0.02);
+  border: none;
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  box-shadow: var(--shadow-sm);
 }
-.glow-violet { box-shadow: 0 18px 60px rgba(76, 29, 149, 0.18); }
-.gradient-text {
-  background: linear-gradient(135deg, #a78bfa, #818cf8 48%, #60a5fa);
-  background-clip: text;
-  color: transparent;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+/* En fondo oscuro la elevación es borde + oscuridad ambiental, no un glow de color */
+.glow-violet { box-shadow: var(--shadow-lg); }
+/* El acento se lleva como línea y marca, nunca como relleno de texto grande */
+.gradient-text { color: var(--color-accent-200); }
 .section-kicker {
-  color: #818cf8;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  color: var(--color-accent);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   line-height: 1;
+  text-transform: uppercase;
 }
 
 /* ============================================================
-   Botones
+   Botones — el primario es un contorno de acento, nunca un relleno
    ============================================================ */
 .gradient-btn, .primary-button {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(165, 180, 252, 0.2);
-  border-radius: 11px;
-  background: linear-gradient(135deg, #7c3aed, #4f46e5 55%, #3b82f6);
-  color: #fff;
-  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-accent);
+  font-weight: 500;
+  transition: background-color 160ms ease, transform 120ms ease;
 }
-/* Barrido de luz al pasar el cursor */
-.gradient-btn::after, .primary-button::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
-  transform: translateX(-120%);
-  transition: transform 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  pointer-events: none;
-}
-.gradient-btn:hover::after, .primary-button:hover::after { transform: translateX(120%); }
 .gradient-btn:hover, .primary-button:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.08);
-  box-shadow: 0 12px 32px rgba(79, 70, 229, 0.28);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
-.gradient-btn:active, .primary-button:active { transform: scale(0.98); }
-.gradient-btn:focus-visible, .primary-button:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 3px; }
+.gradient-btn:active, .primary-button:active {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  transform: scale(0.97);
+}
+.gradient-btn:disabled, .primary-button:disabled { opacity: 0.45; }
+.gradient-btn:focus-visible, .primary-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 
 .ghost-button {
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  color: #cbd5e1;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font-weight: 500;
+  transition: background-color 160ms ease, transform 120ms ease;
 }
-.ghost-button:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(148, 163, 184, 0.28); color: #fff; transform: translateY(-1px); }
-.ghost-button:active { transform: scale(0.98); }
-.ghost-button:focus-visible { outline: 2px solid #818cf8; outline-offset: 3px; }
+.ghost-button:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.ghost-button:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); transform: scale(0.97); }
+.ghost-button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 .danger-button {
-  border: 1px solid rgba(248, 113, 113, 0.3);
-  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #f87171 45%, transparent);
+  border-radius: var(--radius-md);
   background: transparent;
   color: #f87171;
-  transition: background 160ms ease, transform 160ms ease;
+  font-weight: 500;
+  transition: background-color 160ms ease, transform 120ms ease;
 }
-.danger-button:hover { background: rgba(248, 113, 113, 0.1); }
-.danger-button:active { transform: scale(0.98); }
+.danger-button:hover { background: color-mix(in srgb, #f87171 12%, transparent); }
+.danger-button:active { background: color-mix(in srgb, #f87171 20%, transparent); transform: scale(0.97); }
 
 /* Chips / filtros tipo píldora */
 .chip {
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  background: rgba(255, 255, 255, 0.03);
-  color: #94a3b8;
+  border: 1px solid var(--color-divider);
+  background: transparent;
+  color: color-mix(in srgb, var(--color-text) 65%, transparent);
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.5625rem 1rem;
@@ -168,9 +222,9 @@ button:disabled { cursor: not-allowed; }
 }
 .chip:hover { color: #fff; border-color: rgba(148, 163, 184, 0.3); transform: translateY(-1px); }
 .chip-active {
-  border-color: rgba(124, 58, 237, 0.45);
-  background: rgba(124, 58, 237, 0.16);
-  color: #ddd6fe;
+  border-color: var(--color-accent);
+  background: var(--color-accent-800);
+  color: var(--color-accent-100);
 }
 
 /* ============================================================
@@ -221,26 +275,20 @@ button:disabled { cursor: not-allowed; }
   min-height: 138px;
   align-items: flex-end;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: 14px;
-  background: #101827;
-  padding: 14px;
+  border: 1px solid var(--color-neutral-800);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: var(--space-3);
   text-align: left;
   transition: transform 200ms cubic-bezier(0.22, 0.8, 0.28, 1), border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
 }
 .game-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(148, 163, 184, 0.28);
-  background: #141e30;
-  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.45);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
 }
 .game-card:active { transform: translateY(-1px) scale(0.99); }
 .game-card:focus-visible { outline: 2px solid #818cf8; outline-offset: 3px; }
-.game-card-selected {
-  border-color: rgba(129, 140, 248, 0.8);
-  background: linear-gradient(145deg, rgba(79, 70, 229, 0.16), #111a2b 70%);
-  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.2), 0 12px 34px rgba(79, 70, 229, 0.2);
-}
+.game-card-selected { border-color: var(--color-accent); }
 .game-card-image {
   position: absolute;
   inset: 0;
@@ -248,26 +296,21 @@ button:disabled { cursor: not-allowed; }
   width: 100%;
   object-fit: cover;
   object-position: center;
-  transition: transform 380ms cubic-bezier(0.22, 0.8, 0.28, 1), filter 380ms ease;
+  mix-blend-mode: lighten;
+  background-color: transparent;
+  transition: transform 380ms cubic-bezier(0.22, 0.8, 0.28, 1);
 }
-.game-card:hover .game-card-image { transform: scale(1.06); filter: saturate(1.12); }
-.game-card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(5, 10, 20, 0.96) 0%, rgba(5, 10, 20, 0.32) 68%, rgba(5, 10, 20, 0.08) 100%); }
-.game-card-accent {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: var(--game-color);
-  opacity: 0.75;
-  transition: opacity 200ms ease, box-shadow 200ms ease;
-}
-.game-card:hover .game-card-accent { opacity: 1; box-shadow: 0 0 14px var(--game-color); }
+.game-card:hover .game-card-image { transform: scale(1.04); }
+.game-card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--color-bg) 0%, color-mix(in srgb, var(--color-bg) 55%, transparent) 34%, transparent 62%); }
+/* Sistema monoacento: el color del juego queda sólo como punto en los chips */
+.game-card-accent { display: none; }
 
 .onboarding-panel, .match-preview {
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(21, 29, 46, 0.96), rgba(12, 19, 33, 0.96));
-  box-shadow: 0 18px 50px rgba(2, 6, 23, 0.2);
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ============================================================
@@ -275,8 +318,8 @@ button:disabled { cursor: not-allowed; }
    ============================================================ */
 .nav-item {
   position: relative;
-  border-radius: 11px;
-  color: #94a3b8;
+  border-radius: var(--radius-md);
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
   transition: color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 .nav-item::before {
@@ -287,7 +330,7 @@ button:disabled { cursor: not-allowed; }
   height: 0;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: #7c3aed;
+  background: var(--color-accent);
   transform: translateY(-50%);
   transition: height 220ms cubic-bezier(0.22, 0.8, 0.28, 1);
 }
@@ -315,8 +358,8 @@ button:disabled { cursor: not-allowed; }
   width: 48px;
   height: 48px;
   border-radius: 999px;
-  color: #b5bac1;
-  background: rgba(255, 255, 255, 0.04);
+  color: color-mix(in srgb, var(--color-text) 52%, transparent);
+  background: transparent;
   /* Nunca `all`: sólo lo que realmente cambia */
   transition:
     border-radius 200ms var(--ease-out-strong),
@@ -329,9 +372,9 @@ button:disabled { cursor: not-allowed; }
 
 /* La morfología círculo -> squircle es la seña de identidad del rail */
 .rail-item-active {
-  border-radius: 16px;
-  background: linear-gradient(135deg, #7c3aed, #4f46e5 55%, #3b82f6);
-  color: #fff;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-800);
+  color: var(--color-accent-100);
 }
 
 /* Indicador de píldora al borde izquierdo: crece con hover y con el estado activo */
@@ -343,7 +386,7 @@ button:disabled { cursor: not-allowed; }
   width: 4px;
   height: 0;
   border-radius: 0 4px 4px 0;
-  background: #f2f3f5;
+  background: var(--color-accent);
   transform: translateY(-50%);
   transition: height 200ms var(--ease-out-strong);
 }
@@ -371,7 +414,7 @@ button:disabled { cursor: not-allowed; }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .rail-item:hover { border-radius: 16px; background: rgba(124, 58, 237, 0.9); color: #fff; }
+  .rail-item:hover { background: var(--color-neutral-800); color: var(--color-text); }
   .rail-item:hover::before { height: 20px; }
   .rail-item-active:hover::before { height: 40px; }
   .rail-item:hover .rail-tip { opacity: 1; transform: translateY(-50%) scale(1); }
@@ -386,15 +429,15 @@ button:disabled { cursor: not-allowed; }
   padding: 9px 10px;
   font-size: 14px;
   font-weight: 600;
-  color: #b5bac1;
+  color: color-mix(in srgb, var(--color-text) 62%, transparent);
   transition: background-color 160ms ease, color 160ms ease, transform 160ms var(--ease-out-strong);
 }
 .panel-item:active { transform: scale(0.985); }
-.panel-item-active { background: rgba(124, 58, 237, 0.18); color: #f2f3f5; }
+.panel-item-active { background: var(--color-accent-800); color: var(--color-accent-100); }
 .panel-item:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
 
 @media (hover: hover) and (pointer: fine) {
-  .panel-item:hover { background: rgba(255, 255, 255, 0.05); color: #f2f3f5; }
+  .panel-item:hover { background: var(--color-neutral-800); color: var(--color-text); }
 }
 
 /* ============================================================
@@ -406,9 +449,9 @@ button:disabled { cursor: not-allowed; }
   justify-content: center;
   flex-shrink: 0;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-accent-100);
   letter-spacing: 0;
-  background: linear-gradient(135deg, #7c3aed, #3b82f6);
+  background: var(--color-accent-800);
 }
 
 /* ============================================================
@@ -421,10 +464,10 @@ button:disabled { cursor: not-allowed; }
   flex-shrink: 0;
   border: none;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.2);
+  background: var(--color-neutral-800);
   transition: background 200ms ease;
 }
-.toggle-on { background: #7c3aed; }
+.toggle-on { background: var(--color-accent); }
 .toggle::after {
   content: "";
   position: absolute;
@@ -443,11 +486,11 @@ button:disabled { cursor: not-allowed; }
 /* ============================================================
    Barras de progreso
    ============================================================ */
-.meter { height: 6px; border-radius: 999px; background: rgba(148, 163, 184, 0.12); overflow: hidden; }
+.meter { height: 4px; border-radius: 2px; background: var(--color-neutral-800); overflow: hidden; }
 .meter-fill {
   height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #7c3aed, #3b82f6);
+  border-radius: 2px;
+  background: var(--color-accent);
   transform-origin: left;
   animation: bar-fill 700ms cubic-bezier(0.22, 0.8, 0.28, 1) both;
   transition: width 600ms cubic-bezier(0.22, 0.8, 0.28, 1);
@@ -553,15 +596,15 @@ button:disabled { cursor: not-allowed; }
   height: 62px;
   border-radius: 999px;
   border: 2px solid;
-  background: rgba(15, 23, 42, 0.6);
+  background: transparent;
   transition: transform 180ms cubic-bezier(0.22, 0.8, 0.28, 1), box-shadow 180ms ease, background 180ms ease;
 }
 .decision-button:hover { transform: scale(1.12) translateY(-2px); }
 .decision-button:active { transform: scale(0.94); }
-.decision-nope { border-color: rgba(248, 113, 113, 0.5); color: #f87171; }
+.decision-nope { border-color: color-mix(in srgb, #f87171 50%, transparent); color: #f87171; }
 .decision-nope:hover { background: rgba(248, 113, 113, 0.14); box-shadow: 0 10px 30px rgba(248, 113, 113, 0.28); }
-.decision-like { border-color: rgba(124, 58, 237, 0.6); color: #a78bfa; }
-.decision-like:hover { background: rgba(124, 58, 237, 0.18); box-shadow: 0 10px 34px rgba(124, 58, 237, 0.38); }
+.decision-like { border-color: var(--color-accent); color: var(--color-accent); }
+.decision-like:hover { background: color-mix(in srgb, var(--color-accent) 14%, transparent); }
 
 /* Barrido mientras se espera la confirmación del otro jugador */
 .waiting-sweep {
