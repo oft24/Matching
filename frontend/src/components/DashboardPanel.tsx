@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crosshair, Eye, Gamepad2, ShieldCheck, Swords } from 'lucide-react';
+import { Crosshair, Eye, GameController, ShieldCheck, Sword } from '@phosphor-icons/react';
 import type { ChampionStat, Dashboard, MatchSummary, RecentStats, RoleStat } from '../types';
 import PageHeader from './PageHeader';
 import MatchDetailModal from './MatchDetailModal';
@@ -111,7 +111,7 @@ export default function DashboardPanel({ data, game, onGameChange, queue, onQueu
                   {data.matchHistory.length ? `Últimas ${data.matchHistory.length} partidas de ${valorant ? 'Valorant' : 'la cola seleccionada'}` : 'Directamente desde Riot Games'}
                 </p>
               </div>
-              <Gamepad2 className="h-5 w-5 text-indigo-300" />
+              <GameController className="h-5 w-5 text-indigo-300" />
             </div>
 
             {data.matchHistory.length ? (
@@ -130,7 +130,7 @@ export default function DashboardPanel({ data, game, onGameChange, queue, onQueu
               </div>
             ) : (
               <div className="p-12 text-center">
-                <Gamepad2 className="mx-auto mb-3 h-9 w-9 text-slate-600" />
+                <GameController className="mx-auto mb-3 h-9 w-9 text-slate-600" />
                 <p className="text-sm text-slate-400">{data.message}</p>
                 {valorant && (
                   <p className="mx-auto mt-3 max-w-xl text-xs leading-5 text-slate-500">
@@ -388,7 +388,7 @@ function MatchRow({ match, valorant, expanded, onToggle }: { match: MatchSummary
             </>
           ) : (
             <>
-              <p><Swords className="mr-1 inline h-3 w-3" />{match.cs} CS <span className="text-slate-600">({match.csPerMin ?? 0}/min)</span></p>
+              <p><Sword className="mr-1 inline h-3 w-3" />{match.cs} CS <span className="text-slate-600">({match.csPerMin ?? 0}/min)</span></p>
               <p className="mt-1"><Eye className="mr-1 inline h-3 w-3" />{match.visionScore} visión</p>
               <p className="mt-1 text-slate-500">{ROLE_LABELS[match.role] ?? match.role}</p>
             </>

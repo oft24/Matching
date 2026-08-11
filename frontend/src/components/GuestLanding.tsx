@@ -1,14 +1,4 @@
-import {
-  ArrowRight,
-  CheckCircle2,
-  Gamepad2,
-  Headphones,
-  LogIn,
-  ShieldCheck,
-  SlidersHorizontal,
-  Sparkles,
-  UsersRound,
-} from 'lucide-react';
+import { ArrowRight, CheckCircle, GameController, Headphones, ShieldCheck, SignIn, SlidersHorizontal, Sparkle, UsersThree } from '@phosphor-icons/react';
 import GameGrid from './GameGrid';
 import Avatar from './Avatar';
 import type { Game } from '../types';
@@ -22,14 +12,14 @@ interface GuestLandingProps {
 
 const PROOF_POINTS = [
   { icon: SlidersHorizontal, label: 'Matchmaking por rango' },
-  { icon: UsersRound, label: 'Roles compatibles' },
+  { icon: UsersThree, label: 'Roles compatibles' },
   { icon: ShieldCheck, label: 'Perfiles reales' },
 ];
 
 const STEPS = [
   {
     number: '01',
-    icon: Gamepad2,
+    icon: GameController,
     title: 'Elige tu juego',
     description: 'Selecciona el título donde quieres encontrar compañeros.',
   },
@@ -41,7 +31,7 @@ const STEPS = [
   },
   {
     number: '03',
-    icon: UsersRound,
+    icon: UsersThree,
     title: 'Encuentra tu squad',
     description: 'Conecta con jugadores compatibles y empieza a jugar.',
   },
@@ -58,7 +48,7 @@ export default function GuestLanding({ games, selected, onSelect, onOpenLogin }:
 
         <div className="relative max-w-4xl">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-400/8 px-3 py-1.5 text-xs font-semibold text-violet-200">
-            <Sparkles className="h-3.5 w-3.5" />
+            <Sparkle className="h-3.5 w-3.5" />
             MATCHMAKING PARA GAMERS
           </div>
 
@@ -107,7 +97,7 @@ export default function GuestLanding({ games, selected, onSelect, onOpenLogin }:
             onClick={onOpenLogin}
             className="primary-button flex w-full items-center justify-center gap-2 px-5 py-3 text-sm font-semibold lg:w-auto"
           >
-            <LogIn className="h-4 w-4" />
+            <SignIn className="h-4 w-4" />
             Crear mi perfil
             <ArrowRight className="h-4 w-4" />
           </button>
@@ -148,7 +138,7 @@ export default function GuestLanding({ games, selected, onSelect, onOpenLogin }:
           <div className="stagger mt-6 space-y-3">
             {['Preferencias claras antes de conectar', 'Aceptación mutua y contacto directo', 'Tu búsqueda permanece activa hasta hacer match'].map((item) => (
               <div key={item} className="flex items-center gap-3 text-sm text-slate-300">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400" />
                 {item}
               </div>
             ))}

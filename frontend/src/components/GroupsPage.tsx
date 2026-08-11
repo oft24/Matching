@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Search, Users } from 'lucide-react';
+import { MagnifyingGlass, Plus, Users } from '@phosphor-icons/react';
 import PageHeader from './PageHeader';
 import { DEFAULT_GAMES } from '../data/games';
 
@@ -64,7 +64,7 @@ export default function GroupsPage() {
 
       <div className="anim-fade-up mb-5 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: '60ms' }}>
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <MagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}

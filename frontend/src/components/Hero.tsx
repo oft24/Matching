@@ -1,4 +1,4 @@
-import { Users, Handshake, Target } from 'lucide-react';
+import { Handshake, Target, Users } from '@phosphor-icons/react';
 
 const FEATURES = [
   { icon: Users, title: 'Juega en equipo', desc: 'Forma squads con jugadores compatibles' },

@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@phosphor-icons/react';
 import type { Game } from '../types';
 
 interface GameGridProps {
@@ -64,7 +64,7 @@ export default function GameGrid({ games, selected, onSelect, disabled }: GameGr
               </span>
               {isSelected && (
                 <span className="anim-pop absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-400 text-white shadow-lg shadow-indigo-500/40">
-                  <Check className="h-3 w-3" strokeWidth={3} />
+                  <Check weight="bold" className="h-3 w-3" />
                 </span>
               )}
             </button>

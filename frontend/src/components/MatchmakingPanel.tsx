@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Mic, MicOff, RotateCcw, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { ArrowCounterClockwise, CaretDown, Microphone, MicrophoneSlash, ShieldCheck, SlidersHorizontal } from '@phosphor-icons/react';
 import type { SearchFilters } from '../types';
 import { GAME_RANKS } from '../data/gameRanks';
 
@@ -61,7 +61,7 @@ export default function MatchmakingPanel({ filters, onChange, onSearch, loading,
             onClick={() => onChange({ ...defaults, game: filters.game })}
             className="flex flex-shrink-0 items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-white"
           >
-            <RotateCcw className="h-3.5 w-3.5" /> Restablecer
+            <ArrowCounterClockwise className="h-3.5 w-3.5" /> Restablecer
           </button>
         )}
       </div>
@@ -81,8 +81,8 @@ export default function MatchmakingPanel({ filters, onChange, onSearch, loading,
             <p className="mb-2 text-xs font-medium text-slate-400">Micrófono</p>
             <Segmented
               options={[
-                { value: 'yes', label: 'Sí', icon: <Mic className="h-3.5 w-3.5" /> },
-                { value: 'no', label: 'No', icon: <MicOff className="h-3.5 w-3.5" /> },
+                { value: 'yes', label: 'Sí', icon: <Microphone className="h-3.5 w-3.5" /> },
+                { value: 'no', label: 'No', icon: <MicrophoneSlash className="h-3.5 w-3.5" /> },
               ]}
               value={filters.hasMic ? 'yes' : 'no'}
               onChange={(v) => update('hasMic', v === 'yes')}
@@ -110,7 +110,7 @@ export default function MatchmakingPanel({ filters, onChange, onSearch, loading,
               <SlidersHorizontal className="h-4 w-4 text-indigo-300" />
               Preferencias de equipo
             </span>
-            <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${advancedOpen ? 'rotate-180' : ''}`} />
+            <CaretDown className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${advancedOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {advancedOpen && (
@@ -170,7 +170,7 @@ function Field({ label, value, options, onChange }: { label: string; value: stri
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <CaretDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
       </div>
     </label>
   );

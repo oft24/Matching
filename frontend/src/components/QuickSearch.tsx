@@ -1,4 +1,4 @@
-import { Settings, Shield, Star, Users } from 'lucide-react';
+import { Gear, Shield, Star, Users } from '@phosphor-icons/react';
 import type { SearchFilters } from '../types';
 
 interface QuickSearchProps {
@@ -27,7 +27,7 @@ export default function QuickSearch({ filters }: QuickSearchProps) {
           )}
         </div>
         <button className="mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-xl glass text-xs text-slate-400 hover:text-white transition-colors">
-          <Settings className="w-3.5 h-3.5" /> Ver más filtros
+          <Gear className="w-3.5 h-3.5" /> Ver más filtros
         </button>
       </div>
 

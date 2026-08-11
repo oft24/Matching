@@ -1,4 +1,4 @@
-import { Bell, LogIn, LogOut, Menu } from 'lucide-react';
+import { Bell, List, SignIn, SignOut } from '@phosphor-icons/react';
 import Logo from './Logo';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +29,7 @@ export default function Header({ level, xp, xpToNext, onMenuClick, onOpenLogin, 
               aria-label="Abrir menú"
               className="rounded-lg p-2 text-slate-400 transition-[background-color,color] duration-150 hover:bg-white/5 hover:text-white lg:hidden"
             >
-              <Menu className="h-6 w-6" />
+              <List className="h-6 w-6" />
             </button>
           )}
           <Logo size="sm" />
@@ -74,12 +74,12 @@ export default function Header({ level, xp, xpToNext, onMenuClick, onOpenLogin, 
                 </div>
               </div>
               <button onClick={logout} title="Cerrar sesión" className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
-                <LogOut className="h-5 w-5" />
+                <SignOut className="h-5 w-5" />
               </button>
             </div>
           ) : (
             <button onClick={onOpenLogin} className="primary-button flex items-center gap-2 px-4 py-2.5 text-sm font-semibold">
-              <LogIn className="h-4 w-4" />
+              <SignIn className="h-4 w-4" />
               <span>Iniciar sesión</span>
             </button>
           )}

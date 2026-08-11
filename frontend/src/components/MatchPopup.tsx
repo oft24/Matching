@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X } from '@phosphor-icons/react';
 import Avatar, { accentOf } from './Avatar';
 import type { QueueStatus } from '../types';
 
@@ -93,7 +93,7 @@ export default function MatchPopup({ status, onAccept, onReject, loading }: Matc
                   aria-label="Rechazar"
                   className="decision-button decision-nope disabled:opacity-50"
                 >
-                  <X className="h-7 w-7" strokeWidth={2.5} />
+                  <X className="h-7 w-7" weight="bold" />
                 </button>
                 <button
                   onClick={() => decide('accept')}
@@ -102,7 +102,7 @@ export default function MatchPopup({ status, onAccept, onReject, loading }: Matc
                   aria-label="Conectar"
                   className="decision-button decision-like disabled:opacity-50"
                 >
-                  <Check className="h-7 w-7" strokeWidth={3} />
+                  <Check className="h-7 w-7" weight="bold" />
                 </button>
               </div>
             </div>

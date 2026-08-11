@@ -1,4 +1,4 @@
-import { LogOut } from 'lucide-react';
+import { SignOut } from '@phosphor-icons/react';
 import { NAV_ITEMS } from '../data/navItems';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
@@ -66,7 +66,7 @@ export default function IconRail({ active, onNavigate }: IconRailProps) {
             aria-label="Cerrar sesión"
             className="group relative grid h-10 w-10 place-items-center rounded-full text-slate-400 transition-[background-color,color,transform] duration-150 hover:bg-red-500/12 hover:text-red-400 active:scale-[0.97]"
           >
-            <LogOut className="h-[18px] w-[18px]" aria-hidden="true" />
+            <SignOut className="h-[18px] w-[18px]" aria-hidden="true" />
             <span className="rail-tip">Cerrar sesión</span>
           </button>
         </div>

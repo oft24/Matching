@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Check, MessageCircle, Users } from 'lucide-react';
+import { ChatCircle, Check, Users } from '@phosphor-icons/react';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
 import type { QueueStatus } from '../types';
@@ -33,7 +33,7 @@ export default function MatchFoundOverlay({ status, onDone }: MatchFoundOverlayP
         <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full bg-emerald-400/15 text-emerald-300"><Check className="h-6 w-6" /></div>
         <p className="text-3xl font-black uppercase tracking-[0.12em] text-indigo-200 sm:text-5xl">MATCH REALIZADO</p>
         <p className="mt-3 text-base text-slate-300">Ambos aceptaron. Ya pueden coordinar su partida.</p>
-        <p className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-300"><MessageCircle className="h-4 w-4" /> Abriendo el chat...</p>
+        <p className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-300"><ChatCircle className="h-4 w-4" /> Abriendo el chat...</p>
       </div>
     </div>
   </div>;

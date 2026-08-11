@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogIn, UserPlus, X, Loader2 } from 'lucide-react';
+import { CircleNotch, SignIn, UserPlus, X } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 
 interface LoginModalProps {
@@ -85,7 +85,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
             className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
               ${mode === 'login' ? 'bg-brand-violet/30 text-white' : 'text-slate-400 hover:text-white'}`}
           >
-            <LogIn className="w-4 h-4" /> Login
+            <SignIn className="w-4 h-4" /> Login
           </button>
           <button
             type="button"
@@ -147,7 +147,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
             className="gradient-btn flex w-full items-center justify-center gap-2 py-3 text-sm font-semibold
               disabled:opacity-50"
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading && <CircleNotch className="w-4 h-4 animate-spin" />}
             {mode === 'login' ? 'ENTRAR' : 'REGISTRARSE'}
           </button>
         </form>

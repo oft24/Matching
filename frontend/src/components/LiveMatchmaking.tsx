@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, Radio, Square } from 'lucide-react';
+import { Broadcast, CircleNotch, Square } from '@phosphor-icons/react';
 import MatchmakingPanel from './MatchmakingPanel';
 import MatchFoundOverlay from './MatchFoundOverlay';
 import MatchPopup from './MatchPopup';
@@ -172,7 +172,7 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
             disabled={loading}
             className="primary-button flex flex-1 items-center justify-center gap-2 py-4 text-sm font-bold tracking-wide disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radio className="w-4 h-4" />}
+            {loading ? <CircleNotch className="w-4 h-4 animate-spin" /> : <Broadcast className="w-4 h-4" />}
             BUSCAR JUGADOR
           </button>
         ) : isSearching ? (

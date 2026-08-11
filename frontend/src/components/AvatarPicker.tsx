@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Loader2, Sparkles } from 'lucide-react';
+import { Check, CircleNotch, Sparkle } from '@phosphor-icons/react';
 import Avatar from './Avatar';
 import { fetchAvatarOptions, saveProfile, type AvatarOptions } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -78,7 +78,7 @@ export default function AvatarPicker() {
             >
               <img src={options.riot.url} alt="" className="h-14 w-14 rounded-xl object-cover" />
               <span className="absolute -left-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-brand-violet text-white">
-                <Sparkles className="h-3 w-3" />
+                <Sparkle className="h-3 w-3" />
               </span>
             </OptionButton>
           )}
@@ -128,12 +128,12 @@ function OptionButton({
       {children}
       {selected && (
         <span className="anim-pop absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-brand-violet text-white">
-          <Check className="h-3 w-3" strokeWidth={3} />
+          <Check weight="bold" className="h-3 w-3" />
         </span>
       )}
       {busy && (
         <span className="absolute inset-0 grid place-items-center rounded-xl bg-black/50">
-          <Loader2 className="h-4 w-4 animate-spin text-white" />
+          <CircleNotch className="h-4 w-4 animate-spin text-white" />
         </span>
       )}
     </button>

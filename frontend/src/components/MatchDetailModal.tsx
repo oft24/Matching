@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BarChart3, Eye, Loader2, Swords, Trophy, X } from 'lucide-react';
+import { ArrowLeft, ChartBar, CircleNotch, Eye, Sword, Trophy, X } from '@phosphor-icons/react';
 import { fetchLeagueMatch, fetchLeaguePlayer } from '../lib/api';
 import type { LeagueMatchDetail, LeagueMatchParticipant, LeaguePublicPlayer } from '../types';
 
@@ -30,7 +30,7 @@ export default function MatchDetailModal({ matchId, queue, onClose }: Props) {
         </header>
         <div className="p-4 sm:p-6">
           {error && <p className="mb-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
-          {selected ? <PlayerDashboard player={selected} profile={profile} queue={queue} /> : !match ? <div className="grid min-h-80 place-items-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-400" /></div> : <MatchTeams match={match} onPlayer={openPlayer} />}
+          {selected ? <PlayerDashboard player={selected} profile={profile} queue={queue} /> : !match ? <div className="grid min-h-80 place-items-center"><CircleNotch className="h-8 w-8 animate-spin text-indigo-400" /></div> : <MatchTeams match={match} onPlayer={openPlayer} />}
         </div>
       </div>
   </div>;
@@ -59,11 +59,11 @@ function PlayerRow({ player, version, onOpen }: { player: LeagueMatchParticipant
 }
 
 function PlayerDashboard({ player, profile, queue }: { player: LeagueMatchParticipant; profile: LeaguePublicPlayer | null; queue: 'solo' | 'flex' }) {
-  if (!profile) return <div className="grid min-h-80 place-items-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-400" /></div>;
+  if (!profile) return <div className="grid min-h-80 place-items-center"><CircleNotch className="h-8 w-8 animate-spin text-indigo-400" /></div>;
   const rank = profile.ranked[0];
   return <div>
     <div className="mb-6 flex items-center gap-4"><img src={player.championImageUrl ?? ''} alt={player.champion} className="h-20 w-20 rounded-xl object-cover" /><div><p className="text-xs font-semibold uppercase text-indigo-300">Dashboard {queue === 'solo' ? 'Solo/Duo' : 'Flex'}</p><h2 className="mt-1 text-2xl font-bold text-white">{profile.account.gameName}#{profile.account.tagLine}</h2><p className="text-sm text-slate-400">Jugó {player.champion} en esta partida</p></div></div>
-    <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4"><MiniStat icon={Trophy} label="Rango" value={rank ? `${rank.tier} ${rank.rank}` : 'Sin rango'} /><MiniStat icon={BarChart3} label="Win rate" value={`${profile.recent.winRate}%`} /><MiniStat icon={Swords} label="KDA" value={String(profile.recent.kda)} /><MiniStat icon={Eye} label="CS promedio" value={String(profile.recent.cs)} /></div>
+    <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4"><MiniStat icon={Trophy} label="Rango" value={rank ? `${rank.tier} ${rank.rank}` : 'Sin rango'} /><MiniStat icon={ChartBar} label="Win rate" value={`${profile.recent.winRate}%`} /><MiniStat icon={Sword} label="KDA" value={String(profile.recent.kda)} /><MiniStat icon={Eye} label="CS promedio" value={String(profile.recent.cs)} /></div>
     <h3 className="mb-3 text-sm font-semibold text-slate-300">Partidas recientes</h3><div className="divide-y divide-white/8 overflow-hidden rounded-lg border border-white/10">{profile.matches.map((match) => <div key={match.id} className="flex items-center gap-3 px-4 py-3"><img src={match.championImageUrl ?? ''} alt={match.champion} className="h-10 w-10 rounded-lg" /><span className="flex-1"><strong className="block text-sm text-white">{match.champion}</strong><small className="text-slate-500">{match.queue}</small></span><span className="text-sm text-slate-300">{match.kills} / {match.deaths} / {match.assists}</span><span className={match.win ? 'text-emerald-300' : 'text-red-300'}>{match.win ? 'Victoria' : 'Derrota'}</span></div>)}</div>
   </div>;
 }

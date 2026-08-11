@@ -1,4 +1,4 @@
-import { LogOut, X } from 'lucide-react';
+import { SignOut, X } from '@phosphor-icons/react';
 import { NAV_ITEMS } from '../data/navItems';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
@@ -84,7 +84,7 @@ export default function Sidebar({ active, onNavigate, open, onClose }: SidebarPr
                 aria-label="Cerrar sesión"
                 className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-slate-400 transition-[background-color,color] duration-150 hover:bg-red-500/10 hover:text-red-400"
               >
-                <LogOut className="h-4 w-4" />
+                <SignOut className="h-4 w-4" />
               </button>
             </div>
           </div>

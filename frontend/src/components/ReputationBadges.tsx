@@ -1,4 +1,4 @@
-import { Shield, Star, Handshake, Target } from 'lucide-react';
+import { Handshake, Shield, Star, Target } from '@phosphor-icons/react';
 
 const BADGE_MAP: Record<string, { icon: typeof Shield; label: string; color: string }> = {
   verified: { icon: Shield, label: 'Perfil verificado', color: 'text-emerald-400' },

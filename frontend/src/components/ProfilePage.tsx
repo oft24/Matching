@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogIn, LogOut, Mail, Save, Shield, Trophy, User } from 'lucide-react';
+import { EnvelopeSimple, FloppyDisk, Shield, SignIn, SignOut, Trophy, User } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import Avatar from './Avatar';
 import AvatarPicker from './AvatarPicker';
@@ -32,7 +32,7 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
             onClick={onOpenLogin}
             className="gradient-btn inline-flex items-center gap-2 px-8 py-3 rounded-2xl text-white font-bold text-sm"
           >
-            <LogIn className="w-4 h-4" />
+            <SignIn className="w-4 h-4" />
             Iniciar sesión
           </button>
           <p className="text-xs text-slate-500 mt-4">
@@ -53,7 +53,7 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
           <div className="flex-1 text-center sm:text-left">
             <h2 className="mb-1.5 text-2xl font-bold text-white">{user.username}</h2>
             <p className="mb-3 flex items-center justify-center gap-2 text-sm text-slate-400 sm:justify-start">
-              <Mail className="h-4 w-4" /> {user.email}
+              <EnvelopeSimple className="h-4 w-4" /> {user.email}
             </p>
             <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
               <span className="inline-flex items-center gap-1.5 rounded-xl bg-brand-violet/[0.16] px-3 py-1.5 text-xs font-semibold text-violet-300">
@@ -66,7 +66,7 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
           </div>
 
           <button onClick={logout} className="danger-button flex items-center gap-2 px-4 py-2.5 text-sm font-semibold">
-            <LogOut className="h-4 w-4" />
+            <SignOut className="h-4 w-4" />
             Cerrar sesión
           </button>
         </div>
@@ -87,7 +87,7 @@ export default function ProfilePage({ onOpenLogin }: ProfilePageProps) {
               <option value="other" className="bg-brand-dark">Otro</option>
             </select>
           </div>
-          <button disabled={saving} onClick={async () => { setSaving(true); try { updateUser(await saveProfile(gender || null)); } finally { setSaving(false); } }} className="gradient-btn px-5 py-2.5 rounded-xl text-white font-semibold inline-flex justify-center items-center gap-2 disabled:opacity-50"><Save className="w-4 h-4" />Guardar perfil</button>
+          <button disabled={saving} onClick={async () => { setSaving(true); try { updateUser(await saveProfile(gender || null)); } finally { setSaving(false); } }} className="gradient-btn px-5 py-2.5 rounded-xl text-white font-semibold inline-flex justify-center items-center gap-2 disabled:opacity-50"><FloppyDisk className="w-4 h-4" />Guardar perfil</button>
         </div>
 
         <AvatarPicker />
