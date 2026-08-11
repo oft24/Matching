@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Crosshair, Eye, GameController, ShieldCheck, Sword } from '@phosphor-icons/react';
+import { Crosshair, Eye, GameController, ShieldCheck, Sword, Warning } from '@phosphor-icons/react';
 import type { ChampionStat, Dashboard, MatchSummary, RecentStats, RoleStat } from '../types';
 import PageHeader from './PageHeader';
 import MatchDetailModal from './MatchDetailModal';
 
 interface DashboardPanelProps {
   data: Dashboard | null;
+  /** Fallo de red al pedir el dashboard (distinto de "Riot no responde"). */
+  error?: string;
   game: 'lol' | 'valorant';
   onGameChange: (game: 'lol' | 'valorant') => void;
   queue: 'solo' | 'flex';
@@ -51,7 +53,7 @@ function kdaColor(kda: number) {
   return 'text-slate-300';
 }
 
-export default function DashboardPanel({ data, game, onGameChange, queue, onQueueChange }: DashboardPanelProps) {
+export default function DashboardPanel({ data, error, game, onGameChange, queue, onQueueChange }: DashboardPanelProps) {
   const valorant = game === 'valorant';
   const recent = data?.stats?.recent;
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
@@ -87,8 +89,35 @@ export default function DashboardPanel({ data, game, onGameChange, queue, onQueu
         </div>
       )}
 
+      {data && data.riotConnected && !data.stats && (
+        <div className="anim-fade-up mb-5 flex items-start gap-3 rounded-[var(--radius-md)] border border-amber-400/30 bg-amber-400/[0.07] p-4">
+          <Warning className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-300" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-amber-200">Riot Games no está devolviendo datos</p>
+            <p className="mt-1 text-[13px] text-[color-mix(in_srgb,var(--color-text)_70%,transparent)]">{data.message}</p>
+            {/^La clave de Riot/.test(data.message) && (
+              <p className="mt-2 text-[13px] text-[color-mix(in_srgb,var(--color-text)_60%,transparent)]">
+                Las claves de desarrollo de Riot caducan cada 24 horas. Genera una nueva en
+                {' '}
+                <a href="https://developer.riotgames.com/" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] underline">
+                  developer.riotgames.com
+                </a>
+                {' '}y actualiza <code className="rounded bg-black/30 px-1">RIOT_API_KEY</code>.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="anim-fade-up mb-5 flex items-start gap-3 rounded-[var(--radius-md)] border border-red-400/30 bg-red-400/[0.07] p-4">
+          <Warning className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-300" />
+          <p className="text-sm text-red-200">{error}</p>
+        </div>
+      )}
+
       {!data ? (
-        <DashboardSkeleton />
+        error ? null : <DashboardSkeleton />
       ) : (
         <div className="grid items-start gap-4 lg:grid-cols-[340px_1fr]">
           {/* Columna izquierda: rango y resumen agregado */}

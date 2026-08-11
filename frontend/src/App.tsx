@@ -29,6 +29,7 @@ export default function App() {
   const [games, setGames] = useState<Game[]>(DEFAULT_GAMES);
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [dashboardError, setDashboardError] = useState('');
   const [dashboardGame, setDashboardGame] = useState<'lol' | 'valorant'>('lol');
   const [dashboardQueue, setDashboardQueue] = useState<'solo' | 'flex'>('solo');
   const [matchmakingLocked, setMatchmakingLocked] = useState(false);
@@ -51,7 +52,13 @@ export default function App() {
       return;
     }
     setDashboard(null);
-    fetchDashboard(dashboardGame, dashboardQueue).then(setDashboard).catch(() => setDashboard(null));
+    fetchDashboard(dashboardGame, dashboardQueue)
+      .then((data) => { setDashboard(data); setDashboardError(''); })
+      .catch(() => {
+        setDashboard(null);
+        // Un fallo de red no debe quedarse en un panel vacío sin explicación
+        setDashboardError('No pudimos contactar con el servidor. Revisa tu conexión e inténtalo de nuevo.');
+      });
   }, [isAuthenticated, user?.id, activeNav, dashboardGame, dashboardQueue]);
 
   const handleGameSelect = (id: string) => {
@@ -65,7 +72,7 @@ export default function App() {
 
   const renderAuthenticatedContent = () => {
     if (showProfile) return <ProfilePage onOpenLogin={() => openLogin()} />;
-    if (showDashboard) return <DashboardPanel data={dashboard} game={dashboardGame} onGameChange={setDashboardGame} queue={dashboardQueue} onQueueChange={setDashboardQueue} />;
+    if (showDashboard) return <DashboardPanel error={dashboardError} data={dashboard} game={dashboardGame} onGameChange={setDashboardGame} queue={dashboardQueue} onQueueChange={setDashboardQueue} />;
     if (activeNav === 'grupos') return <GroupsPage />;
     if (activeNav === 'amigos') return <FriendsPage />;
     if (activeNav === 'mensajes') return <MessagesPage />;
