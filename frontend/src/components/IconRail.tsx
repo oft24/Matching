@@ -18,12 +18,12 @@ export default function IconRail({ active, onNavigate }: IconRailProps) {
   return (
     <nav
       aria-label="Navegación principal"
-      className="hidden w-[var(--rail-width)] flex-shrink-0 flex-col items-center gap-2 border-r border-white/[0.06] bg-[#0a0f1a] py-3 lg:flex"
+      className="sticky top-0 flex h-screen w-[var(--rail-width)] flex-shrink-0 flex-col items-center gap-1.5 border-r border-[var(--color-neutral-800)] py-3"
     >
       <button
         onClick={() => onNavigate('inicio')}
         aria-label="Inicio"
-        className="group relative grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-violet to-brand-blue text-white transition-transform duration-200 active:scale-[0.97]"
+        className="group relative mb-1.5 grid h-[38px] w-[38px] place-items-center rounded-[var(--radius-md)] border border-[var(--color-accent)] text-[var(--color-accent)] transition-transform duration-200 active:scale-[0.94]"
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
           <circle cx="8" cy="8" r="3" />
@@ -33,9 +33,9 @@ export default function IconRail({ active, onNavigate }: IconRailProps) {
         <span className="rail-tip">Matching</span>
       </button>
 
-      <span className="my-1 h-px w-8 bg-white/10" aria-hidden="true" />
+      <span className="mb-1 h-px w-8 bg-[var(--color-neutral-800)]" aria-hidden="true" />
 
-      <div className="flex flex-1 flex-col items-center gap-2 overflow-y-auto">
+      <div className="flex flex-1 flex-col items-center gap-1.5 overflow-y-auto">
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -52,7 +52,7 @@ export default function IconRail({ active, onNavigate }: IconRailProps) {
 
       {user && (
         <div className="flex flex-col items-center gap-2 pt-1">
-          <span className="h-px w-8 bg-white/10" aria-hidden="true" />
+          <span className="h-px w-8 bg-[var(--color-neutral-800)]" aria-hidden="true" />
           <button
             onClick={() => onNavigate('perfil')}
             aria-label="Mi perfil"

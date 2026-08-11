@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import Sidebar from './components/Sidebar';
 import IconRail from './components/IconRail';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -14,7 +13,7 @@ import SettingsPage from './components/SettingsPage';
 import MatchChatDock from './components/MatchChatDock';
 import MessagesPage from './components/MessagesPage';
 import LoginModal from './components/LoginModal';
-import QuickSearch, { TrustFooter } from './components/QuickSearch';
+import QuickSearch from './components/QuickSearch';
 import { useAuth } from './context/AuthContext';
 import { fetchDashboard, fetchGames } from './lib/api';
 import { DEFAULT_GAMES } from './data/games';
@@ -25,7 +24,6 @@ import type { Dashboard, Game, SearchFilters } from './types';
 export default function App() {
   const { isAuthenticated, user } = useAuth();
   const [activeNav, setActiveNav] = useState('inicio');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'register'>('login');
   const [games, setGames] = useState<Game[]>(DEFAULT_GAMES);
@@ -85,9 +83,8 @@ export default function App() {
     if (showInicio) {
       return (
         <>
-          <Hero />
+          <Hero onNavigate={setActiveNav} />
           <GameGrid games={games} selected={filters.game} onSelect={handleGameSelect} />
-          <TrustFooter />
         </>
       );
     }
@@ -109,21 +106,13 @@ export default function App() {
     <div className="flex min-h-screen bg-brand-dark">
       {/* Rail + panel viven a la izquierda y ocupan toda la altura; la cabecera va dentro del contenido. */}
       <IconRail active={activeNav} onNavigate={setActiveNav} />
-      <Sidebar
-        active={activeNav}
-        onNavigate={setActiveNav}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Header
           level={dashboard?.level ?? user?.level ?? 1}
           xp={dashboard?.xp ?? user?.xp ?? 0}
           xpToNext={dashboard?.xpToNext ?? 100}
-          onMenuClick={() => setSidebarOpen(true)}
-          onOpenLogin={() => openLogin()}
-          compact
+          activeNav={activeNav}
         />
 
         <div className="flex flex-1">

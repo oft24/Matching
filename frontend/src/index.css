@@ -117,11 +117,13 @@ body {
   min-width: 320px;
   overflow-x: hidden;
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
   background: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
 }
-#root { width: calc(100% / 1.1); min-height: calc(100vh / 1.1); margin-inline: auto; zoom: 1.1; }
+#root { min-height: 100vh; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
@@ -345,7 +347,7 @@ button:disabled { cursor: not-allowed; }
    Rail de iconos + panel (estructura tipo Discord, paleta propia)
    ============================================================ */
 :root {
-  --rail-width: 72px;
+  --rail-width: 68px;
   --panel-width: 240px;
   /* Curva de salida fuerte: las nativas se sienten flojas */
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
@@ -355,9 +357,9 @@ button:disabled { cursor: not-allowed; }
   position: relative;
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
   color: color-mix(in srgb, var(--color-text) 52%, transparent);
   background: transparent;
   /* Nunca `all`: sólo lo que realmente cambia */
