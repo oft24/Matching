@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PageHeader from './PageHeader';
 import Toggle from './Toggle';
+import DesktopApp from './DesktopApp';
 
 const NOTIFICATIONS = [
   { key: 'notifMatches', label: 'Nuevos matches', desc: 'Cuando encontramos un jugador compatible' },
@@ -82,6 +83,8 @@ export default function SettingsPage() {
             </label>
           </div>
         </Card>
+
+        <DesktopApp />
 
         <div className="rounded-2xl border border-red-400/20 bg-red-400/[0.04] p-6">
           <h3 className="text-sm font-bold text-red-400">Zona de peligro</h3>

@@ -34,10 +34,10 @@ export default function Hero({ onNavigate }: HeroProps) {
 
       <section className="stagger mt-8 grid gap-4 sm:grid-cols-3">
         {FEATURES.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="surface rounded-[var(--radius-md)] p-4">
+          <div key={title} className="surface min-w-0 rounded-[var(--radius-md)] p-4">
             <Icon className="h-5 w-5 text-[var(--color-accent)]" />
-            <p className="mt-2 text-[17px] font-medium text-[var(--color-text)]">{title}</p>
-            <p className="mt-1 text-[13px] leading-relaxed text-[color-mix(in_srgb,var(--color-text)_70%,transparent)]">
+            <p className="mt-2 text-[15px] font-medium text-balance text-[var(--color-text)]">{title}</p>
+            <p className="mt-1 hyphens-auto break-words text-[13px] leading-relaxed text-[color-mix(in_srgb,var(--color-text)_70%,transparent)]" lang="es">
               {desc}
             </p>
           </div>
