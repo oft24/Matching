@@ -62,8 +62,11 @@ export default function ConnectionSettings() {
       setRiotConnected(true);
       updateUser(res.user);
       setMessage(res.message);
-    } catch {
-      setMessage('No se pudo verificar esa cuenta Riot. Revisa el Riot ID, tag y región.');
+    } catch (error) {
+      // El backend ya distingue clave caducada, cuenta inexistente y límite de
+      // peticiones: mostrar su motivo en vez de culpar siempre al Riot ID.
+      const detail = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setMessage(detail ?? 'No se pudo verificar esa cuenta Riot. Revisa el Riot ID, tag y región.');
     } finally {
       setSaving(null);
     }
@@ -77,8 +80,9 @@ export default function ConnectionSettings() {
       const res = await saveDiscordConnection({ username: discordUsername });
       setDiscordConnected(true);
       setMessage(res.message);
-    } catch {
-      setMessage('Error al guardar conexión Discord');
+    } catch (error) {
+      const detail = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setMessage(detail ?? 'Error al guardar conexión Discord');
     } finally {
       setSaving(null);
     }
