@@ -27,7 +27,7 @@ export default function DesktopApp() {
           </span>
         ) : (
           <a
-            href="https://github.com/oft24/Matching/releases"
+            href="https://github.com/oft24/Matching/releases/latest"
             target="_blank"
             rel="noopener noreferrer"
             className="primary-button flex items-center gap-2 px-4 py-2 text-sm"
@@ -53,11 +53,12 @@ export default function DesktopApp() {
 
       {!isDesktop && (
         <p className="mt-5 border-t border-[var(--color-neutral-800)] pt-4 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-text)_50%,transparent)]">
-          Todavía no hay ningún instalador publicado en Releases. Para generarlo desde el repositorio:{' '}
-          <code className="rounded bg-black/30 px-1.5 py-0.5 text-[11px]">npm run desktop:dist</code>, que deja el
-          ejecutable en <code className="rounded bg-black/30 px-1.5 py-0.5 text-[11px]">release/</code>.
+          Versión 1.0.0 · instalador de 101 MB para Windows x64. Al no estar firmado con un
+          certificado de código, SmartScreen mostrará un aviso la primera vez: pulsa
+          «Más información» y «Ejecutar de todas formas».
         </p>
       )}
+
     </div>
   );
 }
