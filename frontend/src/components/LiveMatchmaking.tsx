@@ -212,7 +212,17 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
           loading={actionLoading}
         />
       )}
-      {celebration && <MatchFoundOverlay status={celebration} onDone={() => setCelebration(null)} />}
+      {celebration && (
+        <MatchFoundOverlay
+          status={celebration}
+          onDone={() => setCelebration(null)}
+          // El dock ya escucha `matching-found`; reemitirlo garantiza que la
+          // conversación quede abierta al salir de la celebración.
+          onMessage={() => window.dispatchEvent(
+            new CustomEvent('matching-found', { detail: { matchId: celebration.matchId } }),
+          )}
+        />
+      )}
     </section>
   );
 }
