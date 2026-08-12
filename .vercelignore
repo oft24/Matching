@@ -1,0 +1,13 @@
+# Vercel no lee .gitignore: lo que no deba subirse va aquí.
+
+# Artefactos del cliente de escritorio: el instalador supera el límite de
+# 100 MB por archivo y no pinta nada en un despliegue web.
+release/
+desktop/
+
+# Vercel instala las dependencias por su cuenta
+node_modules
+**/node_modules
+
+# Servicio Python auxiliar de la raíz (anclado: no debe tocar backend/src/services)
+/services/
