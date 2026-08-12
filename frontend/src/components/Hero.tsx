@@ -32,7 +32,7 @@ export default function Hero({ onNavigate }: HeroProps) {
         </div>
       </section>
 
-      <section className="stagger mt-8 grid gap-4 sm:grid-cols-3">
+      <section className="stagger mt-8 mb-10 grid gap-4 sm:grid-cols-3">
         {FEATURES.map(({ icon: Icon, title, desc }) => (
           <div key={title} className="surface min-w-0 rounded-[var(--radius-md)] p-4">
             <Icon className="h-5 w-5 text-[var(--color-accent)]" />
