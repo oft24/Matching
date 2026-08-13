@@ -6,14 +6,21 @@ import { useAuth } from '../context/AuthContext';
 import type { MatchMessage, QueueStatus } from '../types';
 
 const CHAT_REVEAL_DELAY = 3200;
+/** Con la celebración en pantalla el chat espera: lo abre el usuario, no el reloj.
+ *  El tope evita que una celebración interrumpida deje la ventana retenida. */
+const CELEBRATION_HOLD = 20000;
+/** Margen para que la salida de la celebración termine antes de que aparezca el chat. */
+const RELEASE_DELAY = 160;
 
 export default function MatchChatDock() {
   const { isAuthenticated } = useAuth();
   const [chats, setChats] = useState<QueueStatus[]>([]);
+  const [focusTarget, setFocusTarget] = useState<string | null>(null);
   const visibleRef = useRef<QueueStatus[]>([]);
   const pendingRef = useRef(new Map<string, QueueStatus>());
   const timersRef = useRef(new Map<string, number>());
   const revealAtRef = useRef(new Map<string, number>());
+  const focusRef = useRef(new Set<string>());
 
   const publish = useCallback((next: QueueStatus[]) => {
     visibleRef.current = next;
@@ -22,11 +29,13 @@ export default function MatchChatDock() {
 
   const reveal = useCallback((matchId: string) => {
     const pending = pendingRef.current.get(matchId);
+    const wanted = focusRef.current.delete(matchId);
     pendingRef.current.delete(matchId);
     timersRef.current.delete(matchId);
     revealAtRef.current.delete(matchId);
     if (!pending) return;
     publish([...visibleRef.current.filter((item) => item.matchId !== matchId), pending]);
+    if (wanted) setFocusTarget(matchId);
   }, [publish]);
 
   const scheduleReveal = useCallback((matchId: string) => {
@@ -81,26 +90,44 @@ export default function MatchChatDock() {
   }, [refreshWithReveal]);
 
   useEffect(() => {
+    // Empieza la celebración: el chat queda retenido detrás de ella.
     const announce = (event: Event) => {
       const matchId = (event as CustomEvent<{ matchId?: string }>).detail?.matchId;
       if (!matchId) return;
-      revealAtRef.current.set(matchId, Date.now() + CHAT_REVEAL_DELAY);
+      revealAtRef.current.set(matchId, Date.now() + CELEBRATION_HOLD);
       if (pendingRef.current.has(matchId)) scheduleReveal(matchId);
     };
+    // Termina la celebración: el chat se abre ya, con o sin foco según la salida.
+    const release = (event: Event) => {
+      const detail = (event as CustomEvent<{ matchId?: string; focus?: boolean }>).detail;
+      if (!detail?.matchId) return;
+      revealAtRef.current.set(detail.matchId, Date.now() + (detail.focus ? 0 : RELEASE_DELAY));
+      if (detail.focus) focusRef.current.add(detail.matchId);
+      // Si el chat todavía no se ha descubierto, se pide ahora en vez de esperar al sondeo
+      if (pendingRef.current.has(detail.matchId)) scheduleReveal(detail.matchId);
+      else void refreshWithReveal();
+    };
     window.addEventListener('matching-found', announce);
+    window.addEventListener('matching-chat-release', release);
     return () => {
       window.removeEventListener('matching-found', announce);
-      for (const timer of timersRef.current.values()) window.clearTimeout(timer);
+      window.removeEventListener('matching-chat-release', release);
     };
-  }, [scheduleReveal]);
+  }, [refreshWithReveal, scheduleReveal]);
+
+  // Los temporizadores pendientes mueren con el dock, no antes
+  useEffect(() => () => {
+    for (const timer of timersRef.current.values()) window.clearTimeout(timer);
+    timersRef.current.clear();
+  }, []);
 
   if (!chats.length) return null;
   return <div className="fixed bottom-0 right-4 z-[90] flex max-w-[calc(100vw-2rem)] items-end gap-3 overflow-x-auto px-1 pt-2">
-    {chats.map((chat) => <ChatWindow key={chat.matchId} status={chat} onClosed={() => removeVisible(chat.matchId!)} />)}
+    {chats.map((chat) => <ChatWindow key={chat.matchId} status={chat} takeFocus={chat.matchId === focusTarget} onClosed={() => removeVisible(chat.matchId!)} />)}
   </div>;
 }
 
-function ChatWindow({ status, onClosed }: { status: QueueStatus; onClosed: () => void }) {
+function ChatWindow({ status, takeFocus = false, onClosed }: { status: QueueStatus; takeFocus?: boolean; onClosed: () => void }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<MatchMessage[]>([]);
   const [message, setMessage] = useState('');
@@ -108,7 +135,16 @@ function ChatWindow({ status, onClosed }: { status: QueueStatus; onClosed: () =>
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const messagesReadyRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const opponent = status.opponent!;
+
+  // Si el chat se abrió porque el usuario pulsó "Enviar mensaje", el cursor ya
+  // está donde va a escribir: la celebración conecta con el chat sin un paso muerto.
+  useEffect(() => {
+    if (!takeFocus) return;
+    setMinimized(false);
+    inputRef.current?.focus();
+  }, [takeFocus]);
 
   const refreshMessages = useCallback(async () => {
     if (!status.matchId) return;
@@ -155,7 +191,7 @@ function ChatWindow({ status, onClosed }: { status: QueueStatus; onClosed: () =>
     {!minimized && <div className="flex h-[426px] flex-col">
       {opponent.discord && <div className="flex items-center gap-3 border-b border-white/10 bg-[#5865F2]/10 px-4 py-2.5"><ChatCircle className="h-4 w-4 text-[#8b95ff]" /><span className="min-w-0 flex-1 truncate text-sm text-slate-200">Discord: <strong>{opponent.discord.username}</strong></span><button title="Copiar Discord" onClick={async () => { await navigator.clipboard.writeText(opponent.discord!.username); setCopied(true); }} className="grid h-8 w-8 place-items-center rounded-md text-indigo-300 hover:bg-white/10">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></div>}
       <div className="flex-1 space-y-2 overflow-y-auto p-4" aria-live="polite">{!messages.length && <p className="py-16 text-center text-sm text-slate-500">Ya hicieron match. Escribe para coordinar la partida.</p>}{messages.map((item) => { const mine = item.sender.id === user?.id; return <div key={item.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[82%] rounded-lg px-3 py-2 text-sm ${mine ? 'bg-brand-violet text-white' : 'bg-slate-700 text-slate-100'}`}>{!mine && <p className="mb-0.5 text-xs font-semibold text-slate-300">{item.sender.username}</p>}<p className="break-words">{item.content}</p></div></div>; })}</div>
-      <form onSubmit={send} className="flex gap-2 border-t border-white/10 p-3"><input value={message} onChange={(event) => setMessage(event.target.value)} maxLength={500} placeholder="Escribe un mensaje..." className="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-brand-violet" /><button type="submit" disabled={!message.trim() || sending} title="Enviar" className="gradient-btn grid h-10 w-10 place-items-center rounded-lg text-white disabled:opacity-50"><PaperPlaneTilt className="h-4 w-4" /></button></form>
+      <form onSubmit={send} className="flex gap-2 border-t border-white/10 p-3"><input ref={inputRef} value={message} onChange={(event) => setMessage(event.target.value)} maxLength={500} placeholder="Escribe un mensaje..." className="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-brand-violet" /><button type="submit" disabled={!message.trim() || sending} title="Enviar" className="gradient-btn grid h-10 w-10 place-items-center rounded-lg text-white disabled:opacity-50"><PaperPlaneTilt className="h-4 w-4" /></button></form>
     </div>}
   </aside>;
 }

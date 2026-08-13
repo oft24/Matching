@@ -32,11 +32,25 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const celebratedMatchRef = useRef<string | null>(null);
 
+  // Sin el perfil del rival no hay nada que celebrar todavía: se espera al
+  // siguiente sondeo, que es cuando el backend ya lo trae.
   const announceCelebration = useCallback((nextStatus: QueueStatus) => {
-    if (!nextStatus.matchId || celebratedMatchRef.current === nextStatus.matchId) return;
+    if (!nextStatus.matchId || !nextStatus.opponent) return;
+    if (celebratedMatchRef.current === nextStatus.matchId) return;
     celebratedMatchRef.current = nextStatus.matchId;
     setCelebration(nextStatus);
+    // El dock retiene la ventana de chat mientras la celebración está en pantalla
     window.dispatchEvent(new CustomEvent('matching-found', { detail: { matchId: nextStatus.matchId } }));
+  }, []);
+
+  // Al salir de la celebración el chat se libera: se abre y toma el foco si el
+  // usuario eligió escribir, y aparece sin robar el foco si eligió seguir.
+  const endCelebration = useCallback((matchId: string | undefined, intent: 'message' | 'dismiss') => {
+    setCelebration(null);
+    if (!matchId) return;
+    window.dispatchEvent(new CustomEvent('matching-chat-release', {
+      detail: { matchId, focus: intent === 'message' },
+    }));
   }, []);
 
   const stopPolling = useCallback(() => {
@@ -215,12 +229,7 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
       {celebration && (
         <MatchFoundOverlay
           status={celebration}
-          onDone={() => setCelebration(null)}
-          // El dock ya escucha `matching-found`; reemitirlo garantiza que la
-          // conversación quede abierta al salir de la celebración.
-          onMessage={() => window.dispatchEvent(
-            new CustomEvent('matching-found', { detail: { matchId: celebration.matchId } }),
-          )}
+          onClose={(intent) => endCelebration(celebration.matchId, intent)}
         />
       )}
     </section>

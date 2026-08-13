@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, X } from '@phosphor-icons/react';
 import Avatar, { accentOf } from './Avatar';
 import type { QueueStatus } from '../types';
@@ -28,7 +29,9 @@ export default function MatchPopup({ status, onAccept, onReject, loading }: Matc
     window.setTimeout(() => (choice === 'accept' ? onAccept() : onReject()), 220);
   };
 
-  return (
+  // Igual que la celebración: fuera del árbol de la página, que arrastra un
+  // transform de entrada y desplazaría este `fixed` con el contenido.
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="match-backdrop absolute inset-0 bg-black/85" />
 
@@ -109,6 +112,7 @@ export default function MatchPopup({ status, onAccept, onReject, loading }: Matc
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
