@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChartBar, ChatCircle, Check, CircleNotch, GameController, MagnifyingGlass, Star, Sword, Target, Trophy, UserMinus, UserPlus, X } from '@phosphor-icons/react';
 import Avatar from './Avatar';
 import PageHeader from './PageHeader';
@@ -137,40 +138,45 @@ function ProfileDialog({ person, onClose }: { person: FriendProfile; onClose: ()
 
   const recent = dashboard?.stats.recent;
   const rank = dashboard?.stats.ranked[0];
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-6" onClick={onClose}>
-    <div role="dialog" aria-modal="true" aria-labelledby="friend-profile-title" className="glass max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl" onClick={(event) => event.stopPropagation()}>
-      <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/10 bg-[#111827]/95 p-5 backdrop-blur-xl sm:p-6">
-        <div className="flex min-w-0 gap-4"><Avatar name={profile.username} src={profile.avatar} size={76} radius={16} /><div className="min-w-0"><h3 id="friend-profile-title" className="truncate text-xl font-bold text-white sm:text-2xl">{profile.username}</h3><p className="mt-1 text-sm text-slate-400">Nivel {profile.level} · {genderLabel(profile.gender)}</p>{profile.riot && <p className="mt-1 truncate text-sm text-indigo-300">{profile.riot.gameName}#{profile.riot.tagLine} · {profile.riot.region?.toUpperCase()}</p>}</div></div>
-        <button onClick={onClose} title="Cerrar perfil" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 text-slate-400 hover:bg-white/5 hover:text-white"><X className="h-4 w-4" /></button>
-      </header>
+  // Fuera del árbol de la página: `.page-view` conserva un transform de entrada
+  // y anclaría este `fixed` a la columna de contenido en vez de a la ventana.
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-6" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-labelledby="friend-profile-title" className="glass max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl" onClick={(event) => event.stopPropagation()}>
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/10 bg-[#111827]/95 p-5 backdrop-blur-xl sm:p-6">
+          <div className="flex min-w-0 gap-4"><Avatar name={profile.username} src={profile.avatar} size={76} radius={16} /><div className="min-w-0"><h3 id="friend-profile-title" className="truncate text-xl font-bold text-white sm:text-2xl">{profile.username}</h3><p className="mt-1 text-sm text-slate-400">Nivel {profile.level} · {genderLabel(profile.gender)}</p>{profile.riot && <p className="mt-1 truncate text-sm text-indigo-300">{profile.riot.gameName}#{profile.riot.tagLine} · {profile.riot.region?.toUpperCase()}</p>}</div></div>
+          <button onClick={onClose} title="Cerrar perfil" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 text-slate-400 hover:bg-white/5 hover:text-white"><X className="h-4 w-4" /></button>
+        </header>
 
-      <div className="p-5 sm:p-6">
-        {loading && <div className="flex items-center gap-2 py-8 text-sm text-slate-400"><CircleNotch className="h-5 w-5 animate-spin text-brand-violet" /> Cargando perfil...</div>}
-        {!loading && <>
-          <section className="grid gap-5 border-b border-white/10 pb-6 md:grid-cols-[1fr_auto] md:items-center">
-            <div><p className="text-sm font-semibold text-white">Calificación de la comunidad</p><div className="mt-2 flex flex-wrap items-center gap-3"><StarRow value={rating?.average ?? 0} /><strong className="text-xl text-white">{rating?.count ? rating.average.toFixed(1) : 'Sin calificar'}</strong><span className="text-xs text-slate-500">{rating?.count ?? 0} {(rating?.count ?? 0) === 1 ? 'valoración' : 'valoraciones'}</span></div></div>
-            <div><p className="mb-2 text-xs font-medium text-slate-400">Tu calificación</p><div className="flex items-center gap-1">{[1, 2, 3, 4, 5].map((score) => <button key={score} type="button" onClick={() => submitRating(score)} disabled={ratingSaving} aria-label={`Calificar con ${score} estrellas`} title={`${score} estrellas`} className="grid h-9 w-9 place-items-center rounded-md text-amber-300 hover:bg-amber-300/10 disabled:opacity-50"><Star className={`h-6 w-6 ${(rating?.myRating ?? 0) >= score ? 'fill-current' : ''}`} /></button>)}{ratingSaving && <CircleNotch className="ml-2 h-4 w-4 animate-spin text-slate-500" />}</div>{ratingError && <p className="mt-2 text-xs text-red-300">{ratingError}</p>}</div>
-          </section>
+        <div className="p-5 sm:p-6">
+          {loading && <div className="flex items-center gap-2 py-8 text-sm text-slate-400"><CircleNotch className="h-5 w-5 animate-spin text-brand-violet" /> Cargando perfil...</div>}
+          {!loading && <>
+            <section className="grid gap-5 border-b border-white/10 pb-6 md:grid-cols-[1fr_auto] md:items-center">
+              <div><p className="text-sm font-semibold text-white">Calificación de la comunidad</p><div className="mt-2 flex flex-wrap items-center gap-3"><StarRow value={rating?.average ?? 0} /><strong className="text-xl text-white">{rating?.count ? rating.average.toFixed(1) : 'Sin calificar'}</strong><span className="text-xs text-slate-500">{rating?.count ?? 0} {(rating?.count ?? 0) === 1 ? 'valoración' : 'valoraciones'}</span></div></div>
+              <div><p className="mb-2 text-xs font-medium text-slate-400">Tu calificación</p><div className="flex items-center gap-1">{[1, 2, 3, 4, 5].map((score) => <button key={score} type="button" onClick={() => submitRating(score)} disabled={ratingSaving} aria-label={`Calificar con ${score} estrellas`} title={`${score} estrellas`} className="grid h-9 w-9 place-items-center rounded-md text-amber-300 hover:bg-amber-300/10 disabled:opacity-50"><Star className={`h-6 w-6 ${(rating?.myRating ?? 0) >= score ? 'fill-current' : ''}`} /></button>)}{ratingSaving && <CircleNotch className="ml-2 h-4 w-4 animate-spin text-slate-500" />}</div>{ratingError && <p className="mt-2 text-xs text-red-300">{ratingError}</p>}</div>
+            </section>
 
-          <section className="border-b border-white/10 py-6">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><h4 className="flex items-center gap-2 font-semibold text-white"><GameController className="h-4 w-4 text-indigo-300" /> Dashboard de League of Legends</h4><p className="mt-1 text-xs text-slate-500">Rendimiento de su cuenta conectada de Riot.</p></div><div className="grid grid-cols-2 rounded-lg border border-white/10 bg-[#0d1523] p-1"><button onClick={() => setQueue('solo')} className={`rounded-md px-4 py-2 text-xs font-semibold ${queue === 'solo' ? 'bg-indigo-500 text-white' : 'text-slate-400'}`}>Solo/Duo</button><button onClick={() => setQueue('flex')} className={`rounded-md px-4 py-2 text-xs font-semibold ${queue === 'flex' ? 'bg-indigo-500 text-white' : 'text-slate-400'}`}>Flex</button></div></div>
+            <section className="border-b border-white/10 py-6">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><h4 className="flex items-center gap-2 font-semibold text-white"><GameController className="h-4 w-4 text-indigo-300" /> Dashboard de League of Legends</h4><p className="mt-1 text-xs text-slate-500">Rendimiento de su cuenta conectada de Riot.</p></div><div className="grid grid-cols-2 rounded-lg border border-white/10 bg-[#0d1523] p-1"><button onClick={() => setQueue('solo')} className={`rounded-md px-4 py-2 text-xs font-semibold ${queue === 'solo' ? 'bg-indigo-500 text-white' : 'text-slate-400'}`}>Solo/Duo</button><button onClick={() => setQueue('flex')} className={`rounded-md px-4 py-2 text-xs font-semibold ${queue === 'flex' ? 'bg-indigo-500 text-white' : 'text-slate-400'}`}>Flex</button></div></div>
 
-            {dashboardLoading ? <div className="flex items-center gap-2 py-10 text-sm text-slate-400"><CircleNotch className="h-5 w-5 animate-spin text-brand-violet" /> Consultando Riot Games...</div> : dashboardError ? <div className="mt-5 border-l-2 border-amber-400/60 py-2 pl-4 text-sm text-slate-400">{dashboardError}</div> : dashboard && <>
-              <div className="mt-6 grid grid-cols-2 border-y border-white/10 sm:grid-cols-4">
-                <ProfileStat icon={Trophy} label="Rango" value={rank ? `${rank.tier} ${rank.rank}`.trim() : 'Sin rango'} detail={rank ? `${rank.leaguePoints} LP` : ''} />
-                <ProfileStat icon={Target} label="Win rate" value={`${recent?.winRate ?? 0}%`} detail={recent ? `${recent.wins}V · ${recent.losses}D` : ''} />
-                <ProfileStat icon={Sword} label="KDA" value={String(recent?.kda ?? 0)} detail="Últimas 5" />
-                <ProfileStat icon={ChartBar} label="CS promedio" value={String(recent?.cs ?? 0)} detail="Por partida" />
-              </div>
-              <div className="mt-6"><h5 className="text-sm font-semibold text-white">Partidas recientes</h5>{dashboard.matchHistory.length ? <div className="mt-3 divide-y divide-white/10 border-y border-white/10">{dashboard.matchHistory.map((match) => <article key={match.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-3"><img src={match.championImageUrl ?? ''} alt={match.champion} className="h-11 w-11 rounded-lg object-cover ring-1 ring-white/10" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-x-2"><strong className="text-sm text-white">{match.champion}</strong><span className={match.win ? 'text-xs font-semibold text-emerald-300' : 'text-xs font-semibold text-red-300'}>{match.win ? 'Victoria' : 'Derrota'}</span></div><p className="mt-1 truncate text-xs text-slate-500">{match.queue} · {match.cs} CS · {playedDate(match.playedAt)}</p></div><div className="text-right"><p className="text-sm font-semibold text-white">{match.kills} / {match.deaths} / {match.assists}</p><p className="mt-1 text-xs text-indigo-300">{match.kda} KDA</p></div></article>)}</div> : <p className="mt-4 text-sm text-slate-500">{dashboard.message}</p>}</div>
-            </>}
-          </section>
+              {dashboardLoading ? <div className="flex items-center gap-2 py-10 text-sm text-slate-400"><CircleNotch className="h-5 w-5 animate-spin text-brand-violet" /> Consultando Riot Games...</div> : dashboardError ? <div className="mt-5 border-l-2 border-amber-400/60 py-2 pl-4 text-sm text-slate-400">{dashboardError}</div> : dashboard && <>
+                <div className="mt-6 grid grid-cols-2 border-y border-white/10 sm:grid-cols-4">
+                  <ProfileStat icon={Trophy} label="Rango" value={rank ? `${rank.tier} ${rank.rank}`.trim() : 'Sin rango'} detail={rank ? `${rank.leaguePoints} LP` : ''} />
+                  <ProfileStat icon={Target} label="Win rate" value={`${recent?.winRate ?? 0}%`} detail={recent ? `${recent.wins}V · ${recent.losses}D` : ''} />
+                  <ProfileStat icon={Sword} label="KDA" value={String(recent?.kda ?? 0)} detail="Últimas 5" />
+                  <ProfileStat icon={ChartBar} label="CS promedio" value={String(recent?.cs ?? 0)} detail="Por partida" />
+                </div>
+                <div className="mt-6"><h5 className="text-sm font-semibold text-white">Partidas recientes</h5>{dashboard.matchHistory.length ? <div className="mt-3 divide-y divide-white/10 border-y border-white/10">{dashboard.matchHistory.map((match) => <article key={match.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-3"><img src={match.championImageUrl ?? ''} alt={match.champion} className="h-11 w-11 rounded-lg object-cover ring-1 ring-white/10" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-x-2"><strong className="text-sm text-white">{match.champion}</strong><span className={match.win ? 'text-xs font-semibold text-emerald-300' : 'text-xs font-semibold text-red-300'}>{match.win ? 'Victoria' : 'Derrota'}</span></div><p className="mt-1 truncate text-xs text-slate-500">{match.queue} · {match.cs} CS · {playedDate(match.playedAt)}</p></div><div className="text-right"><p className="text-sm font-semibold text-white">{match.kills} / {match.deaths} / {match.assists}</p><p className="mt-1 text-xs text-indigo-300">{match.kda} KDA</p></div></article>)}</div> : <p className="mt-4 text-sm text-slate-500">{dashboard.message}</p>}</div>
+              </>}
+            </section>
 
-          <section className="pt-5"><div className="grid gap-4 sm:grid-cols-2">{profile.riot?.topChampion && <div className="flex items-center gap-3"><img src={profile.riot.topChampion.imageUrl} alt={profile.riot.topChampion.name} className="h-12 w-12 rounded-lg object-cover" /><p className="text-sm text-slate-300">Más jugado: <strong className="text-white">{profile.riot.topChampion.name}</strong><br /><span className="text-xs text-slate-500">{profile.riot.topChampion.masteryPoints.toLocaleString()} puntos de maestría</span></p></div>}{profile.discord && <p className="flex items-center gap-2 text-sm text-indigo-300"><ChatCircle className="h-4 w-4" /> Discord: {profile.discord.username}</p>}</div></section>
-        </>}
+            <section className="pt-5"><div className="grid gap-4 sm:grid-cols-2">{profile.riot?.topChampion && <div className="flex items-center gap-3"><img src={profile.riot.topChampion.imageUrl} alt={profile.riot.topChampion.name} className="h-12 w-12 rounded-lg object-cover" /><p className="text-sm text-slate-300">Más jugado: <strong className="text-white">{profile.riot.topChampion.name}</strong><br /><span className="text-xs text-slate-500">{profile.riot.topChampion.masteryPoints.toLocaleString()} puntos de maestría</span></p></div>}{profile.discord && <p className="flex items-center gap-2 text-sm text-indigo-300"><ChatCircle className="h-4 w-4" /> Discord: {profile.discord.username}</p>}</div></section>
+          </>}
+        </div>
       </div>
-    </div>
-  </div>;
+    </div>,
+    document.body,
+  );
 }
 
 function StarRow({ value }: { value: number }) {
