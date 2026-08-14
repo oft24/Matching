@@ -38,6 +38,10 @@ export default function MatchChatDock() {
     if (wanted) setFocusTarget(matchId);
   }, [publish]);
 
+  // El foco es una señal de un solo uso: si se quedara pegado, una reapertura
+  // posterior de ese mismo chat robaría el cursor sin que nadie lo pidiera.
+  const clearFocusTarget = useCallback(() => setFocusTarget(null), []);
+
   const scheduleReveal = useCallback((matchId: string) => {
     const previousTimer = timersRef.current.get(matchId);
     if (previousTimer) window.clearTimeout(previousTimer);
@@ -123,11 +127,11 @@ export default function MatchChatDock() {
 
   if (!chats.length) return null;
   return <div className="fixed bottom-0 right-4 z-[90] flex max-w-[calc(100vw-2rem)] items-end gap-3 overflow-x-auto px-1 pt-2">
-    {chats.map((chat) => <ChatWindow key={chat.matchId} status={chat} takeFocus={chat.matchId === focusTarget} onClosed={() => removeVisible(chat.matchId!)} />)}
+    {chats.map((chat) => <ChatWindow key={chat.matchId} status={chat} takeFocus={chat.matchId === focusTarget} onFocused={clearFocusTarget} onClosed={() => removeVisible(chat.matchId!)} />)}
   </div>;
 }
 
-function ChatWindow({ status, takeFocus = false, onClosed }: { status: QueueStatus; takeFocus?: boolean; onClosed: () => void }) {
+function ChatWindow({ status, takeFocus = false, onFocused, onClosed }: { status: QueueStatus; takeFocus?: boolean; onFocused?: () => void; onClosed: () => void }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<MatchMessage[]>([]);
   const [message, setMessage] = useState('');
@@ -144,7 +148,8 @@ function ChatWindow({ status, takeFocus = false, onClosed }: { status: QueueStat
     if (!takeFocus) return;
     setMinimized(false);
     inputRef.current?.focus();
-  }, [takeFocus]);
+    onFocused?.();
+  }, [takeFocus, onFocused]);
 
   const refreshMessages = useCallback(async () => {
     if (!status.matchId) return;
