@@ -248,3 +248,14 @@ export interface AuthResponse {
   user: AuthUser;
   token: string;
 }
+
+/** Respuesta del registro/reenvío: la cuenta existe pero falta confirmar el correo. */
+export interface VerificationChallenge {
+  requiresVerification: true;
+  email: string;
+  /** false cuando el backend no tiene Resend configurado y solo lo imprimió en consola. */
+  emailDelivered: boolean;
+  expiresInMinutes: number;
+  /** Solo fuera de producción y sin correo configurado: permite probar el flujo. */
+  devCode?: string;
+}

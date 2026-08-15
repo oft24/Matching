@@ -41,6 +41,7 @@ Para login, registro y perfiles necesitas PostgreSQL en línea. **Recomendamos [
 
 ```env
 DATABASE_URL="postgresql://usuario:password@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require"
+DIRECT_URL="postgresql://usuario:password@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require"
 JWT_SECRET="un-secreto-largo-y-aleatorio"
 ```
 
@@ -78,18 +79,52 @@ Servicios:
 
 ## Autenticación
 
-La app inicia **deslogueada**. El usuario puede:
+La app inicia **deslogueada**. El registro exige **confirmar el correo con un código de 6 dígitos** antes de poder entrar.
 
-- **Iniciar sesión** — botón en header, sidebar o sección Mi Perfil
-- **Registrarse** — desde el modal de login (pestaña Registro)
-- **Cerrar sesión** — en Mi Perfil, header o sidebar
+```
+Registro ──> código al correo ──> Verificar ──> sesión iniciada
+                                      ▲
+Login (cuenta sin verificar) ─────────┘
+```
+
+- **Registrarse** — usuario, email y contraseña. La cuenta queda pendiente y **no** se inicia sesión: se envía un código que caduca en **10 minutos**.
+- **Verificar** — seis casillas (acepta pegar el código completo). Máximo **5 intentos** por código; reenvío disponible cada **60 segundos**.
+- **Iniciar sesión** — email y contraseña. Si la cuenta aún no está verificada, el backend responde `403`, reenvía el código y la interfaz salta al paso de verificación.
+- **Cerrar sesión** — en Mi Perfil, header o sidebar.
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | /api/auth/register | Crear cuenta |
-| POST | /api/auth/login | Iniciar sesión |
+| POST | /api/auth/register | Crear cuenta y enviar código (no devuelve token) |
+| POST | /api/auth/verify-email | Confirmar el código → devuelve token |
+| POST | /api/auth/resend-code | Reenviar código (429 si aún hay espera) |
+| POST | /api/auth/login | Iniciar sesión (403 si falta verificar) |
+| GET | /api/auth/config | Si hay base de datos y correo configurados |
 | GET | /api/auth/me | Perfil actual (requiere token) |
 | POST | /api/auth/logout | Cerrar sesión |
+
+Los códigos se guardan **hasheados** con bcrypt en la tabla `VerificationCode`; nunca viajan al cliente ni quedan en claro en la base de datos.
+
+### Envío de correo (Resend)
+
+1. Crea cuenta en [resend.com](https://resend.com) — 3000 correos/mes gratis
+2. Genera una API key en [resend.com/api-keys](https://resend.com/api-keys)
+3. Pégala en `backend/.env`:
+
+```env
+RESEND_API_KEY="re_xxxxxxxx"
+MAIL_FROM="Matching <onboarding@resend.dev>"
+```
+
+> `onboarding@resend.dev` funciona sin verificar dominio, pero **solo entrega al correo dueño de la cuenta de Resend**. Para escribir a cualquier destinatario, verifica un dominio en Resend y usa una dirección de ese dominio.
+
+**Sin `RESEND_API_KEY`** el flujo sigue siendo usable en desarrollo: el código se imprime en la consola del backend y la interfaz avisa dónde encontrarlo.
+
+### Validar el flujo
+
+```bash
+npm run db:verify         # conexión + las 9 tablas esperadas
+npm run db:validate-auth  # registro → código → verificación → login, de punta a punta
+```
 
 ## Otros endpoints
 

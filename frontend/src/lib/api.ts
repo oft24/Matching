@@ -14,6 +14,7 @@ import type {
   QueueStatus,
   SearchFilters,
   UserConnection,
+  VerificationChallenge,
 } from '../types';
 
 const api = axios.create({
@@ -34,8 +35,22 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return data;
 }
 
-export async function register(username: string, email: string, password: string): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>('/auth/register', { username, email, password });
+export async function register(
+  username: string,
+  email: string,
+  password: string,
+): Promise<VerificationChallenge> {
+  const { data } = await api.post<VerificationChallenge>('/auth/register', { username, email, password });
+  return data;
+}
+
+export async function verifyEmail(email: string, code: string): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>('/auth/verify-email', { email, code });
+  return data;
+}
+
+export async function resendCode(email: string): Promise<VerificationChallenge> {
+  const { data } = await api.post<VerificationChallenge>('/auth/resend-code', { email });
   return data;
 }
 

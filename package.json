@@ -11,6 +11,7 @@
     "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend",
     "db:setup": "npm run db:generate --prefix backend && npm run db:push --prefix backend",
     "db:verify": "node backend/scripts/verify-db.js",
+    "db:validate-auth": "node backend/scripts/validateAuthFlow.js",
     "desktop:dev": "concurrently -k \"npm run dev --prefix frontend -- --host 127.0.0.1 --port 5174\" \"wait-on http://127.0.0.1:5174 && electron . --dev-url http://127.0.0.1:5174\"",
     "desktop:icon": "node desktop/generate-icon.cjs",
     "desktop:build:web": "npm run build --prefix frontend -- --mode desktop && npm run desktop:icon",

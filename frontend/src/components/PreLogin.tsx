@@ -1,13 +1,17 @@
-import { FormEvent, useState } from 'react';
-import { CircleNotch, Eye, EyeSlash, SignIn, UserPlus } from '@phosphor-icons/react';
+import { FormEvent, useEffect, useState } from 'react';
+import { ArrowLeft, CircleNotch, Eye, EyeSlash, SignIn, UserPlus } from '@phosphor-icons/react';
 import Logo from './Logo';
 import MatchingStage from './MatchingStage';
+import CodeInput, { CODE_LENGTH } from './CodeInput';
 import { useAuth } from '../context/AuthContext';
+import { parseAuthError } from '../lib/authErrors';
+import type { VerificationChallenge } from '../types';
 
-type Mode = 'login' | 'register';
+type Mode = 'login' | 'register' | 'verify';
 type Field = 'user' | 'email' | 'pass';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+const RESEND_COOLDOWN_S = 60;
 
 /**
  * Pantalla previa al login: propuesta de valor y formulario a la izquierda,
@@ -15,11 +19,14 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
  * real de la app — no es una demostración.
  */
 export default function PreLogin() {
-  const { login, register } = useAuth();
+  const { login, register, verifyEmail, resendCode } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
   const [user, setUser] = useState('');
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
+  const [code, setCode] = useState('');
+  const [challenge, setChallenge] = useState<VerificationChallenge | null>(null);
+  const [cooldown, setCooldown] = useState(0);
   const [showPass, setShowPass] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [loading, setLoading] = useState(false);
@@ -27,9 +34,17 @@ export default function PreLogin() {
   const [error, setError] = useState('');
 
   const isRegister = mode === 'register';
+  const isVerify = mode === 'verify';
   const emailOk = EMAIL_RE.test(email.trim());
   const passOk = pass.length >= 6;
   const userOk = !isRegister || user.trim().length >= 3;
+  const canSubmit = isVerify ? code.length === CODE_LENGTH : emailOk && passOk && userOk;
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
 
   const touch = (field: Field) => () => setTouched((t) => ({ ...t, [field]: true }));
   const switchMode = (next: Mode) => {
@@ -37,6 +52,34 @@ export default function PreLogin() {
     setTouched({});
     setStatus('');
     setError('');
+  };
+
+  const openChallenge = (next: VerificationChallenge) => {
+    setChallenge(next);
+    setCode('');
+    setError('');
+    setCooldown(RESEND_COOLDOWN_S);
+    setStatus(
+      next.emailDelivered
+        ? `Enviamos un código de ${CODE_LENGTH} dígitos a ${next.email}. Caduca en ${next.expiresInMinutes} minutos.`
+        : `El envío de correo no está configurado. El código está en la consola del backend${next.devCode ? `: ${next.devCode}` : ''}.`,
+    );
+    setMode('verify');
+  };
+
+  const handleResend = async () => {
+    if (cooldown > 0 || loading) return;
+    setLoading(true);
+    setError('');
+    try {
+      openChallenge(await resendCode(challenge?.email ?? email.trim()));
+    } catch (err) {
+      const { message, retryAfter } = parseAuthError(err);
+      if (retryAfter) setCooldown(retryAfter);
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const userError = touched.user && !userOk ? 'Usa al menos 3 caracteres.' : '';
@@ -47,23 +90,40 @@ export default function PreLogin() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    setTouched({ user: true, email: true, pass: true });
-    if (!emailOk || !passOk || !userOk || loading) return;
+    if (!isVerify) setTouched({ user: true, email: true, pass: true });
+    if (!canSubmit || loading) return;
 
     setLoading(true);
     setError('');
-    setStatus(isRegister ? 'Creando tu cuenta…' : 'Comprobando credenciales…');
+    setStatus(
+      isVerify ? 'Verificando el código…' : isRegister ? 'Creando tu cuenta…' : 'Comprobando credenciales…',
+    );
     try {
-      if (isRegister) await register(user.trim(), email.trim(), pass);
-      else await login(email.trim(), pass);
-      // En éxito AuthContext cambia de usuario y App monta la vista autenticada
+      if (isVerify) {
+        await verifyEmail(challenge?.email ?? email.trim(), code);
+        // En éxito AuthContext cambia de usuario y App monta la vista autenticada
+      } else if (isRegister) {
+        // El registro ya no entra directo: primero hay que confirmar el correo.
+        openChallenge(await register(user.trim(), email.trim(), pass));
+      } else {
+        await login(email.trim(), pass);
+      }
     } catch (err) {
-      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(message ?? 'No pudimos completar la operación. Intenta de nuevo.');
-      setStatus('');
+      const { message, challenge: pending } = parseAuthError(err);
+      // Login con cuenta sin confirmar: el backend ya reenvió el código.
+      if (pending) openChallenge(pending);
+      else setStatus('');
+      setError(message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const backToLogin = () => {
+    setChallenge(null);
+    setCode('');
+    setPass('');
+    switchMode('login');
   };
 
   return (
@@ -92,30 +152,49 @@ export default function PreLogin() {
           </p>
 
           <div className="surface mt-8 rounded-[var(--radius-lg)] p-6">
-            <div className="mb-6 grid grid-cols-2 overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-divider)]">
-              {([['login', 'Entrar', SignIn], ['register', 'Crear cuenta', UserPlus]] as const).map(
-                ([value, label, Icon], i) => {
-                  const active = mode === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => switchMode(value)}
-                      aria-pressed={active}
-                      className={`flex items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2 text-[13px] transition-colors
-                        ${i === 1 ? 'border-l border-[var(--color-divider)]' : ''}
-                        ${active
-                          ? 'text-[var(--color-accent)] shadow-[inset_0_0_0_1px_var(--color-accent)]'
-                          : 'text-[var(--color-text)] hover:bg-[color-mix(in_srgb,var(--color-text)_7%,transparent)]'}`}
-                    >
-                      <Icon className="h-4 w-4" /> {label}
-                    </button>
-                  );
-                },
-              )}
-            </div>
+            {isVerify ? (
+              <div className="mb-6">
+                <h2 className="text-lg text-[var(--color-text)]">Confirma tu correo</h2>
+                <p className="mt-1 text-[13px] text-[color-mix(in_srgb,var(--color-text)_65%,transparent)]">
+                  Escribe el código que enviamos a {challenge?.email ?? email.trim()}
+                </p>
+              </div>
+            ) : (
+              <div className="mb-6 grid grid-cols-2 overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-divider)]">
+                {([['login', 'Entrar', SignIn], ['register', 'Crear cuenta', UserPlus]] as const).map(
+                  ([value, label, Icon], i) => {
+                    const active = mode === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => switchMode(value)}
+                        aria-pressed={active}
+                        className={`flex items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2 text-[13px] transition-colors
+                          ${i === 1 ? 'border-l border-[var(--color-divider)]' : ''}
+                          ${active
+                            ? 'text-[var(--color-accent)] shadow-[inset_0_0_0_1px_var(--color-accent)]'
+                            : 'text-[var(--color-text)] hover:bg-[color-mix(in_srgb,var(--color-text)_7%,transparent)]'}`}
+                      >
+                        <Icon className="h-4 w-4" /> {label}
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            )}
 
             <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+              {isVerify && (
+                <div>
+                  {/* Sin htmlFor: el código son seis casillas, no un único input. */}
+                  <span className="mb-1.5 block text-xs text-[color-mix(in_srgb,var(--color-text)_70%,transparent)]">
+                    Código de verificación
+                  </span>
+                  <CodeInput value={code} onChange={setCode} disabled={loading} variant="nocturne" />
+                </div>
+              )}
+
               {isRegister && (
                 <Field label="Usuario" htmlFor="pl-user" error={userError}>
                   <input
@@ -131,50 +210,74 @@ export default function PreLogin() {
                 </Field>
               )}
 
-              <Field label="Email" htmlFor="pl-email" error={emailError}>
-                <input
-                  id="pl-email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="tu@email.com"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                  onBlur={touch('email')}
-                  className="nocturne-input"
-                />
-              </Field>
+              {!isVerify && (
+                <>
+                  <Field label="Email" htmlFor="pl-email" error={emailError}>
+                    <input
+                      id="pl-email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="tu@email.com"
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                      onBlur={touch('email')}
+                      className="nocturne-input"
+                    />
+                  </Field>
 
-              <Field label="Contraseña" htmlFor="pl-pass" error={passError}>
-                <div className="relative flex items-center">
-                  <input
-                    id="pl-pass"
-                    type={showPass ? 'text' : 'password'}
-                    autoComplete={isRegister ? 'new-password' : 'current-password'}
-                    placeholder="Mínimo 6 caracteres"
-                    value={pass}
-                    onChange={(e) => { setPass(e.target.value); setError(''); }}
-                    onBlur={touch('pass')}
-                    className="nocturne-input pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass((v) => !v)}
-                    aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    className="absolute right-1 grid h-8 w-8 place-items-center rounded-[var(--radius-md)] text-[var(--color-accent)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]"
-                  >
-                    {showPass ? <EyeSlash className="h-[17px] w-[17px]" /> : <Eye className="h-[17px] w-[17px]" />}
-                  </button>
-                </div>
-              </Field>
+                  <Field label="Contraseña" htmlFor="pl-pass" error={passError}>
+                    <div className="relative flex items-center">
+                      <input
+                        id="pl-pass"
+                        type={showPass ? 'text' : 'password'}
+                        autoComplete={isRegister ? 'new-password' : 'current-password'}
+                        placeholder="Mínimo 6 caracteres"
+                        value={pass}
+                        onChange={(e) => { setPass(e.target.value); setError(''); }}
+                        onBlur={touch('pass')}
+                        className="nocturne-input pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPass((v) => !v)}
+                        aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        className="absolute right-1 grid h-8 w-8 place-items-center rounded-[var(--radius-md)] text-[var(--color-accent)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]"
+                      >
+                        {showPass ? <EyeSlash className="h-[17px] w-[17px]" /> : <Eye className="h-[17px] w-[17px]" />}
+                      </button>
+                    </div>
+                  </Field>
+                </>
+              )}
 
               <button
                 type="submit"
-                disabled={loading || !emailOk || !passOk || !userOk}
+                disabled={loading || !canSubmit}
                 className="primary-button mt-1 min-h-[38px] w-full text-sm"
               >
                 {loading && <CircleNotch className="h-4 w-4 animate-spin" />}
-                {loading ? 'Comprobando…' : isRegister ? 'Crear cuenta' : 'Entrar'}
+                {loading ? 'Comprobando…' : isVerify ? 'Verificar' : isRegister ? 'Crear cuenta' : 'Entrar'}
               </button>
+
+              {isVerify && (
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={backToLogin}
+                    className="flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--color-text)_65%,transparent)] transition-colors hover:text-[var(--color-text)]"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" /> Volver
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={cooldown > 0 || loading}
+                    className="text-xs text-[var(--color-accent)] transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:text-[color-mix(in_srgb,var(--color-text)_40%,transparent)]"
+                  >
+                    {cooldown > 0 ? `Reenviar código en ${cooldown}s` : 'Reenviar código'}
+                  </button>
+                </div>
+              )}
 
               {error && <p className="text-[13px] text-red-400">{error}</p>}
               {!error && status && (
