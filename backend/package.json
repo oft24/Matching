@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "prisma generate",
+    "build": "prisma generate && node scripts/applySchema.js",
+    "db:apply": "node scripts/applySchema.js",
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "db:generate": "prisma generate",
