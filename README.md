@@ -126,6 +126,18 @@ npm run db:verify         # conexión + las 9 tablas esperadas
 npm run db:validate-auth  # registro → código → verificación → login, de punta a punta
 ```
 
+## Migraciones y despliegue
+
+El build del backend (`npm run build --prefix backend`) hace dos cosas: genera el cliente de Prisma y **aplica las migraciones pendientes** con `scripts/applySchema.js`.
+
+Antes solo generaba el cliente, así que cada cambio de esquema llegaba a producción contra una base sin actualizar y tumbaba la API. Las migraciones listadas en `REPEATABLE` están escritas para poder ejecutarse en cada despliegue sin efecto (`ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`), y se aplican por `directUrl` para no pasar DDL por el pooler.
+
+**Al añadir una migración nueva**, escríbela de forma idempotente y añade su carpeta a `REPEATABLE` en [applySchema.js](backend/scripts/applySchema.js). Si el build corre sin `DIRECT_URL` ni `DATABASE_URL`, omite el paso en vez de fallar.
+
+```bash
+npm run db:apply --prefix backend   # aplicarlas a mano contra el .env actual
+```
+
 ## Otros endpoints
 
 | Método | Ruta | Descripción |
