@@ -79,52 +79,49 @@ Servicios:
 
 ## Autenticación
 
-La app inicia **deslogueada**. El registro exige **confirmar el correo con un código de 6 dígitos** antes de poder entrar.
+La app inicia **deslogueada** y se entra **con Google**, un solo paso. No hay contraseñas, ni códigos, ni correo que enviar: Google ya garantiza que la dirección es del usuario.
 
 ```
-Registro ──> código al correo ──> Verificar ──> sesión iniciada
-                                      ▲
-Login (cuenta sin verificar) ─────────┘
+Botón de Google ──> ID token ──> el backend lo verifica ──> sesión iniciada
 ```
 
-- **Registrarse** — usuario, email y contraseña. La cuenta queda pendiente y **no** se inicia sesión: se envía un código que caduca en **10 minutos**.
-- **Verificar** — seis casillas (acepta pegar el código completo). Máximo **5 intentos** por código; reenvío disponible cada **60 segundos**.
-- **Iniciar sesión** — email y contraseña. Si la cuenta aún no está verificada, el backend responde `403`, reenvía el código y la interfaz salta al paso de verificación.
-- **Cerrar sesión** — en Mi Perfil, header o sidebar.
+Entrar y registrarse son la misma acción: si el correo no existe se crea la cuenta, y si ya existe **se enlaza** en lugar de duplicarla, para que nadie pierda su perfil, sus amigos ni su historial.
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | /api/auth/register | Crear cuenta y enviar código (no devuelve token) |
-| POST | /api/auth/verify-email | Confirmar el código → devuelve token |
-| POST | /api/auth/resend-code | Reenviar código (429 si aún hay espera) |
-| POST | /api/auth/login | Iniciar sesión (403 si falta verificar) |
-| GET | /api/auth/config | Si hay base de datos y correo configurados |
+| POST | /api/auth/google | Canjea el ID token de Google por una sesión |
+| GET | /api/auth/config | Si hay base de datos y Google configurados, y el client id |
 | GET | /api/auth/me | Perfil actual (requiere token) |
 | POST | /api/auth/logout | Cerrar sesión |
 
-Los códigos se guardan **hasheados** con bcrypt en la tabla `VerificationCode`; nunca viajan al cliente ni quedan en claro en la base de datos.
+El backend **verifica el token localmente**: descarga las claves públicas de Google, comprueba la firma RS256, que el token esté emitido para esta aplicación (`aud`), que venga de Google (`iss`) y que el correo esté verificado. Las claves se cachean respetando el `max-age` de Google y se refrescan solas cuando rotan. Sin dependencias extra: `jsonwebtoken` más el `crypto` de Node.
 
-### Envío de correo (Resend)
+### Configurar Google
 
-1. Crea cuenta en [resend.com](https://resend.com) — 3000 correos/mes gratis
-2. Verifica tu dominio en [resend.com/domains](https://resend.com/domains) y añade los registros DKIM/SPF que te indique en tu DNS
-3. Genera una API key en [resend.com/api-keys](https://resend.com/api-keys) con permiso *Sending access*
-4. En `backend/.env`:
+1. En [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials) crea un proyecto
+2. Configura la **pantalla de consentimiento** (tipo *External*, con nombre de app y correo de contacto)
+3. **Crear credenciales → ID de cliente de OAuth → Aplicación web**
+4. En **Orígenes autorizados de JavaScript** añade las URLs desde las que se sirve la app:
 
-```env
-RESEND_API_KEY="re_xxxxxxxx"
-MAIL_FROM="Matching <no-reply@tudominio.com>"
+```
+http://localhost:5173
+https://tu-app.vercel.app
 ```
 
-> Sin dominio verificado, Resend solo entrega al correo dueño de la cuenta y rechaza cualquier otro destinatario con un `403`. Si el DNS está en Cloudflare, esos registros van **sin proxy** (nube gris) o la verificación falla.
+5. Copia el **Client ID** a `backend/.env`:
 
-**Sin `RESEND_API_KEY`** el flujo sigue siendo usable en desarrollo: el código se imprime en la consola del backend y la interfaz avisa dónde encontrarlo. `GET /api/auth/config` indica si el correo está configurado.
+```env
+GOOGLE_CLIENT_ID="xxxxxxxx.apps.googleusercontent.com"
+```
 
-### Validar el flujo
+> No hace falta el *client secret*: el flujo usa ID tokens, no el intercambio por código. El client id es público y el frontend lo pide a `/api/auth/config`, así que **no** se compila dentro del bundle ni necesita una variable `VITE_`.
+>
+> Los **orígenes** deben coincidir exactamente, incluido el puerto. Es la causa habitual del error `origin_mismatch`.
+
+### Validar
 
 ```bash
-npm run db:verify         # conexión + las 9 tablas esperadas
-npm run db:validate-auth  # registro → código → verificación → login, de punta a punta
+npm run db:verify   # conexión + las 8 tablas esperadas
 ```
 
 ## Migraciones y despliegue
@@ -152,6 +149,6 @@ npm run db:apply --prefix backend   # aplicarlas a mano contra el .env actual
 ## Stack
 
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS 4, Lucide Icons
-- **Backend**: Node.js, Express 5, Prisma, JWT, bcrypt
+- **Backend**: Node.js, Express 5, Prisma, JWT, Google Identity Services
 - **Base de datos**: PostgreSQL (Neon)
 - **Python**: FastAPI, Pydantic (scoring de compatibilidad)

@@ -12,7 +12,10 @@ model User {
   id          String           @id @default(cuid())
   username    String           @unique
   email       String           @unique
-  password    String
+  // Sin contraseña: se entra con Google. Las cuentas antiguas conservan su
+  // hash, pero ya no hay ninguna ruta que lo compruebe.
+  password    String?
+  googleId    String?          @unique
   avatar      String?
   gender      String?
   level       Int              @default(1)
@@ -20,7 +23,6 @@ model User {
   emailVerified DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
-  verificationCodes VerificationCode[]
   connections UserConnection[]
   queueEntry  QueueEntry?
   messages    MatchMessage[]
@@ -30,21 +32,6 @@ model User {
   ratingsReceived UserRating[] @relation("RatingTarget")
   friendshipsStarted Friendship[] @relation("FriendshipUser")
   friendshipsReceived Friendship[] @relation("FriendshipFriend")
-}
-
-model VerificationCode {
-  id         String    @id @default(cuid())
-  userId     String
-  purpose    String    @default("email_verification")
-  codeHash   String
-  expiresAt  DateTime
-  attempts   Int       @default(0)
-  consumedAt DateTime?
-  createdAt  DateTime  @default(now())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, purpose])
-  @@index([expiresAt])
 }
 
 model UserRating {

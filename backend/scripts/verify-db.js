@@ -11,7 +11,6 @@ const prisma = new PrismaClient();
 // Debe coincidir con los modelos de prisma/schema.prisma.
 const EXPECTED_TABLES = [
   'User',
-  'VerificationCode',
   'UserConnection',
   'QueueEntry',
   'LiveMatch',
@@ -49,15 +48,13 @@ async function main() {
     process.exit(1);
   }
 
-  const [userCount, pendingCount, unverifiedCount] = await Promise.all([
+  const [userCount, googleCount] = await Promise.all([
     prisma.user.count(),
-    prisma.verificationCode.count({ where: { consumedAt: null } }),
-    prisma.user.count({ where: { emailVerified: null } }),
+    prisma.user.count({ where: { googleId: { not: null } } }),
   ]);
 
   console.log(`\n✓ Las ${EXPECTED_TABLES.length} tablas existen`);
-  console.log(`  Usuarios: ${userCount} (${unverifiedCount} sin verificar)`);
-  console.log(`  Códigos de verificación pendientes: ${pendingCount}`);
+  console.log(`  Usuarios: ${userCount} (${googleCount} enlazados con Google)`);
 }
 
 main()

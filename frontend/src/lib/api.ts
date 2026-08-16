@@ -1,7 +1,8 @@
 import axios from 'axios';
 import type {
-  AuthResponse,
+  AuthConfig,
   AuthUser,
+  GoogleAuthResponse,
   Dashboard,
   Conversation,
   Game,
@@ -14,7 +15,6 @@ import type {
   QueueStatus,
   SearchFilters,
   UserConnection,
-  VerificationChallenge,
 } from '../types';
 
 const api = axios.create({
@@ -30,27 +30,14 @@ export function setAuthToken(token: string | null) {
   }
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
+/** Cambia el ID token de Google por una sesión de Matching. */
+export async function loginWithGoogle(credential: string): Promise<GoogleAuthResponse> {
+  const { data } = await api.post<GoogleAuthResponse>('/auth/google', { credential });
   return data;
 }
 
-export async function register(
-  username: string,
-  email: string,
-  password: string,
-): Promise<VerificationChallenge> {
-  const { data } = await api.post<VerificationChallenge>('/auth/register', { username, email, password });
-  return data;
-}
-
-export async function verifyEmail(email: string, code: string): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>('/auth/verify-email', { email, code });
-  return data;
-}
-
-export async function resendCode(email: string): Promise<VerificationChallenge> {
-  const { data } = await api.post<VerificationChallenge>('/auth/resend-code', { email });
+export async function fetchAuthConfig(): Promise<AuthConfig> {
+  const { data } = await api.get<AuthConfig>('/auth/config');
   return data;
 }
 

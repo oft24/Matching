@@ -20,7 +20,10 @@ const migrationsDir = join(backendDir, 'prisma', 'migrations');
 
 // Solo las migraciones escritas para poder repetirse. Las anteriores ya están
 // aplicadas en producción y no son idempotentes: volver a lanzarlas fallaría.
-const REPEATABLE = ['20260815000000_email_verification'];
+const REPEATABLE = [
+  '20260815000000_email_verification',
+  '20260815120000_google_signin',
+];
 
 // directUrl evita el pooler: el DDL a través de pgbouncer no es fiable.
 const url = process.env.DIRECT_URL || process.env.DATABASE_URL;

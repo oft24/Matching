@@ -249,13 +249,15 @@ export interface AuthResponse {
   token: string;
 }
 
-/** Respuesta del registro/reenvío: la cuenta existe pero falta confirmar el correo. */
-export interface VerificationChallenge {
-  requiresVerification: true;
-  email: string;
-  /** false cuando el backend no tiene Resend configurado y solo lo imprimió en consola. */
-  emailDelivered: boolean;
-  expiresInMinutes: number;
-  /** Solo fuera de producción y sin correo configurado: permite probar el flujo. */
-  devCode?: string;
+export interface GoogleAuthResponse extends AuthResponse {
+  /** true la primera vez que esa cuenta de Google entra en Matching. */
+  isNew: boolean;
+}
+
+/** Lo que el backend expone para que el frontend sepa qué puede ofrecer. */
+export interface AuthConfig {
+  database: boolean;
+  google: boolean;
+  /** El client id es público: viaja al navegador para inicializar Google. */
+  googleClientId: string | null;
 }

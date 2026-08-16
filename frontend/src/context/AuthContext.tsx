@@ -1,23 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   getMe,
-  login as apiLogin,
+  loginWithGoogle as apiLoginWithGoogle,
   logout as apiLogout,
-  register as apiRegister,
-  resendCode as apiResendCode,
   setAuthToken,
-  verifyEmail as apiVerifyEmail,
 } from '../lib/api';
-import type { AuthUser, VerificationChallenge } from '../types';
+import type { AuthUser } from '../types';
 
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  /** No inicia sesión: devuelve el reto de verificación con el código enviado por correo. */
-  register: (username: string, email: string, password: string) => Promise<VerificationChallenge>;
-  verifyEmail: (email: string, code: string) => Promise<void>;
-  resendCode: (email: string) => Promise<VerificationChallenge>;
+  /** Cambia el ID token de Google por una sesión. Registra si la cuenta es nueva. */
+  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => void;
   updateUser: (user: AuthUser) => void;
   refreshUser: () => Promise<void>;
@@ -47,46 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     apiLogout().catch(() => {});
   }, []);
 
-  const startSession = useCallback((nextUser: AuthUser, token: string) => {
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    const { user: u, token } = await apiLoginWithGoogle(credential);
     localStorage.setItem(TOKEN_KEY, token);
     setAuthToken(token);
-    setUser(nextUser);
+    setUser(u);
   }, []);
-
-  const login = useCallback(async (email: string, password: string) => {
-    const { user: u, token } = await apiLogin(email, password);
-    startSession(u, token);
-  }, [startSession]);
-
-  // El registro ya no abre sesión: la cuenta queda pendiente hasta verificar.
-  const register = useCallback(
-    (username: string, email: string, password: string) => apiRegister(username, email, password),
-    [],
-  );
-
-  const verifyEmail = useCallback(async (email: string, code: string) => {
-    const { user: u, token } = await apiVerifyEmail(email, code);
-    startSession(u, token);
-  }, [startSession]);
-
-  const resendCode = useCallback((email: string) => apiResendCode(email), []);
 
   const updateUser = useCallback((nextUser: AuthUser) => setUser(nextUser), []);
   const refreshUser = useCallback(async () => setUser(await getMe()), []);
 
   const value = useMemo(
-    () => ({
-      user,
-      isAuthenticated: !!user,
-      login,
-      register,
-      verifyEmail,
-      resendCode,
-      logout,
-      updateUser,
-      refreshUser,
-    }),
-    [user, login, register, verifyEmail, resendCode, logout, updateUser, refreshUser],
+    () => ({ user, isAuthenticated: !!user, loginWithGoogle, logout, updateUser, refreshUser }),
+    [user, loginWithGoogle, logout, updateUser, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
