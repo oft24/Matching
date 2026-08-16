@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma, isDatabaseConfigured } from '../config/prisma.js';
 import { signToken } from '../utils/tokens.js';
 import { requireAuth } from '../middleware/auth.js';
-import { isMailConfigured, sendVerificationCode } from '../services/mailService.js';
+import { activeProvider, isMailConfigured, sendVerificationCode } from '../services/mailService.js';
 import { consumeCode, issueCode, VerificationError } from '../services/verificationService.js';
 
 const router = Router();
@@ -232,7 +232,11 @@ router.get('/me', requireAuth, (req, res) => {
 });
 
 router.get('/config', (_req, res) => {
-  res.json({ database: isDatabaseConfigured(), mail: isMailConfigured() });
+  res.json({
+    database: isDatabaseConfigured(),
+    mail: isMailConfigured(),
+    provider: activeProvider(),
+  });
 });
 
 router.post('/logout', (_req, res) => {
