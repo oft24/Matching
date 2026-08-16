@@ -1,5 +1,4 @@
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
-const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
 
 // Remitente de pruebas de Resend: funciona sin verificar dominio, pero solo
 // entrega al correo dueño de la cuenta de Resend.
@@ -13,14 +12,8 @@ export class MailError extends Error {
   }
 }
 
-/**
- * Brevo tiene prioridad porque permite verificar una única dirección sin
- * poseer un dominio; Resend queda como alternativa para cuando haya uno.
- */
 export function activeProvider() {
-  if (process.env.BREVO_API_KEY) return 'brevo';
-  if (process.env.RESEND_API_KEY) return 'resend';
-  return null;
+  return process.env.RESEND_API_KEY ? 'resend' : null;
 }
 
 export function isMailConfigured() {
@@ -35,51 +28,28 @@ function parseFrom() {
   return { name: 'Matching', email: raw };
 }
 
-async function post(endpoint, headers, body, provider) {
-  const res = await fetch(endpoint, {
+async function sendWithResend({ to, subject, html, text }) {
+  const from = parseFrom();
+  const res = await fetch(RESEND_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify(body),
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from: `${from.name} <${from.email}>`, to: [to], subject, html, text }),
   });
 
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
-    throw new MailError(`${provider} respondió ${res.status}: ${detail.slice(0, 300)}`);
+    throw new MailError(`Resend respondió ${res.status}: ${detail.slice(0, 300)}`);
   }
 }
 
-function sendWithResend({ to, subject, html, text }) {
-  const from = parseFrom();
-  return post(
-    RESEND_ENDPOINT,
-    { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
-    { from: `${from.name} <${from.email}>`, to: [to], subject, html, text },
-    'Resend',
-  );
-}
-
-function sendWithBrevo({ to, subject, html, text }) {
-  const from = parseFrom();
-  return post(
-    BREVO_ENDPOINT,
-    { 'api-key': process.env.BREVO_API_KEY, accept: 'application/json' },
-    {
-      sender: { name: from.name, email: from.email },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
-      textContent: text,
-    },
-    'Brevo',
-  );
-}
-
 /**
- * Envía el código de verificación. Sin proveedor configurado no falla: lo
- * imprime en la consola del backend para poder probar el flujo en desarrollo.
+ * Envía el código de verificación. Sin RESEND_API_KEY no falla: lo imprime en
+ * la consola del backend para poder probar el flujo en desarrollo.
  */
 export async function sendVerificationCode(email, code, { username } = {}) {
-  const provider = activeProvider();
   const payload = {
     to: email,
     subject: `${code} es tu código de verificación · Matching`,
@@ -87,18 +57,16 @@ export async function sendVerificationCode(email, code, { username } = {}) {
     html: verificationTemplate(code, username),
   };
 
-  if (!provider) {
+  if (!isMailConfigured()) {
     console.warn(
-      `\n⚠ Sin proveedor de correo (BREVO_API_KEY o RESEND_API_KEY) — correo NO enviado.\n` +
+      `\n⚠ RESEND_API_KEY no configurada — correo NO enviado.\n` +
         `  Código de verificación para ${email}: ${code}\n`,
     );
     return { delivered: false, reason: 'mail_not_configured' };
   }
 
-  if (provider === 'brevo') await sendWithBrevo(payload);
-  else await sendWithResend(payload);
-
-  return { delivered: true, provider };
+  await sendWithResend(payload);
+  return { delivered: true, provider: 'resend' };
 }
 
 function verificationTemplate(code, username) {

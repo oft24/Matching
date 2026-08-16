@@ -104,36 +104,21 @@ Login (cuenta sin verificar) ─────────┘
 
 Los códigos se guardan **hasheados** con bcrypt en la tabla `VerificationCode`; nunca viajan al cliente ni quedan en claro en la base de datos.
 
-### Envío de correo
+### Envío de correo (Resend)
 
-[mailService.js](backend/src/services/mailService.js) admite dos proveedores y elige solo: usa **Brevo** si existe `BREVO_API_KEY`, y si no **Resend** con `RESEND_API_KEY`. `GET /api/auth/config` dice cuál está activo.
-
-Ningún proveedor de correo transaccional deja escribir a desconocidos sin demostrar antes que controlas la dirección o el dominio desde el que envías. La diferencia está en cómo se demuestra:
-
-| | Verificación | Gratis | Entregabilidad |
-|---|---|---|---|
-| **Brevo** | Una sola dirección, sin dominio | 300/día | Aceptable |
-| **Resend** | Dominio completo (DKIM/SPF) | 3000/mes | Mejor |
-
-#### Brevo — sin dominio propio
-
-1. Crea cuenta en [brevo.com](https://brevo.com)
-2. **Senders, Domains & Dedicated IPs → Senders → Add a sender**: pon tu correo y confirma el enlace que te llega
-3. **SMTP & API → API Keys** → genera una clave
+1. Crea cuenta en [resend.com](https://resend.com) — 3000 correos/mes gratis
+2. Verifica tu dominio en [resend.com/domains](https://resend.com/domains) y añade los registros DKIM/SPF que te indique en tu DNS
+3. Genera una API key en [resend.com/api-keys](https://resend.com/api-keys) con permiso *Sending access*
 4. En `backend/.env`:
 
 ```env
-BREVO_API_KEY="xkeysib-xxxxxxxx"
-MAIL_FROM="Matching <tu-correo-verificado@gmail.com>"
+RESEND_API_KEY="re_xxxxxxxx"
+MAIL_FROM="Matching <no-reply@tudominio.com>"
 ```
 
-> `MAIL_FROM` debe coincidir **exactamente** con el remitente verificado, o Brevo rechaza el envío.
+> Sin dominio verificado, Resend solo entrega al correo dueño de la cuenta y rechaza cualquier otro destinatario con un `403`. Si el DNS está en Cloudflare, esos registros van **sin proxy** (nube gris) o la verificación falla.
 
-#### Resend — con dominio propio
-
-Verifica el dominio en [resend.com/domains](https://resend.com/domains), añade los registros DKIM/SPF en tu DNS y usa una dirección de ese dominio en `MAIL_FROM`. El remitente de pruebas `onboarding@resend.dev` funciona sin dominio pero **solo entrega al correo dueño de la cuenta**.
-
-**Sin ninguna clave** el flujo sigue siendo usable en desarrollo: el código se imprime en la consola del backend y la interfaz avisa dónde encontrarlo.
+**Sin `RESEND_API_KEY`** el flujo sigue siendo usable en desarrollo: el código se imprime en la consola del backend y la interfaz avisa dónde encontrarlo. `GET /api/auth/config` indica si el correo está configurado.
 
 ### Validar el flujo
 
