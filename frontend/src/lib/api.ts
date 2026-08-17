@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type {
   AuthConfig,
+  AuthResponse,
   AuthUser,
   GoogleAuthResponse,
   Dashboard,
@@ -28,6 +29,20 @@ export function setAuthToken(token: string | null) {
   } else {
     delete api.defaults.headers.common.Authorization;
   }
+}
+
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
+  return data;
+}
+
+export async function register(
+  username: string,
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>('/auth/register', { username, email, password });
+  return data;
 }
 
 /** Cambia el ID token de Google por una sesión de Matching. */

@@ -61,50 +61,52 @@ interface GoogleSignInButtonProps {
   onSignedIn?: () => void;
 }
 
+type Status = 'loading' | 'ready' | 'signing' | 'unavailable' | 'error';
+
+/**
+ * Botón «Continuar con Google». Entrar con correo sigue siendo posible, así que
+ * si Google no está disponible el componente se retira en silencio en vez de
+ * plantar un error delante de un formulario que sí funciona.
+ */
 export default function GoogleSignInButton({ theme = 'dark', onSignedIn }: GoogleSignInButtonProps) {
   const { loginWithGoogle } = useAuth();
   const holder = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'signing' | 'error'>('loading');
+  const [status, setStatus] = useState<Status>('loading');
   const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
 
-    const fail = (message: string) => {
-      if (cancelled) return;
-      setError(message);
-      setStatus('error');
-    };
+    const giveUp = () => { if (!cancelled) setStatus('unavailable'); };
 
     (async () => {
       try {
         const config = await fetchAuthConfig();
         if (cancelled) return;
 
-        if (!config.database) {
-          return fail('La base de datos no está configurada en el servidor.');
-        }
-        if (!config.googleClientId) {
-          return fail('Falta configurar GOOGLE_CLIENT_ID en el servidor.');
-        }
+        if (!config.database || !config.googleClientId) return giveUp();
 
         await loadGoogleScript();
         if (cancelled || !holder.current) return;
 
         const accounts = window.google?.accounts?.id;
-        if (!accounts) return fail('Google no se inicializó correctamente.');
+        if (!accounts) return giveUp();
 
         accounts.initialize({
           client_id: config.googleClientId,
           callback: async ({ credential }) => {
-            if (!credential) return fail('Google no devolvió ninguna credencial.');
+            if (!credential) return;
             setError('');
             setStatus('signing');
             try {
               await loginWithGoogle(credential);
               onSignedIn?.();
             } catch (err) {
-              fail(parseAuthError(err));
+              if (cancelled) return;
+              // Un fallo al canjear el token sí merece decirse: el usuario
+              // acaba de elegir su cuenta y espera haber entrado.
+              setError(parseAuthError(err));
+              setStatus('error');
             }
           },
         });
@@ -120,8 +122,8 @@ export default function GoogleSignInButton({ theme = 'dark', onSignedIn }: Googl
         });
 
         setStatus('ready');
-      } catch (err) {
-        fail(err instanceof Error ? err.message : 'No se pudo preparar el acceso con Google.');
+      } catch {
+        giveUp();
       }
     })();
 
@@ -130,10 +132,12 @@ export default function GoogleSignInButton({ theme = 'dark', onSignedIn }: Googl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (status === 'unavailable') return null;
+
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex w-full flex-col items-center gap-3">
       {/* Google inyecta su iframe aquí; se oculta mientras no esté listo. */}
-      <div ref={holder} className={status === 'ready' || status === 'signing' ? '' : 'hidden'} />
+      <div ref={holder} className={status === 'loading' ? 'hidden' : ''} />
 
       {status === 'loading' && (
         <p className="flex items-center gap-2 text-sm text-slate-400">
