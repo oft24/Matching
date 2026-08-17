@@ -4,6 +4,16 @@
 # 100 MB por archivo y no pinta nada en un despliegue web.
 release/
 desktop/
+desktop-artifacts/
+.codex-run/
+.agents/
+.vercel/
+
+# Archivos locales y credenciales
+.env
+.env.*
+*.log
+skills-lock.json
 
 # Vercel instala las dependencias por su cuenta
 node_modules
