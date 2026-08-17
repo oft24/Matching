@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, ChatCircle } from '@phosphor-icons/react';
+import { ArrowRight, ChatCircle, DiscordLogo } from '@phosphor-icons/react';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
 import type { QueueStatus } from '../types';
@@ -109,6 +109,11 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
   const yo = user?.username ?? 'Tú';
   const avatarSize = compact ? 92 : 116;
   const heroHeight = compact ? 118 : 150;
+  const openDiscord = () => {
+    if (!status.discordInviteUrl) return;
+    window.open(status.discordInviteUrl, '_blank', 'noopener,noreferrer');
+    close('dismiss');
+  };
 
   // Fuera del árbol de la página: `.page-view` conserva un transform de entrada
   // y ancharía este `fixed` a la columna de contenido en vez de a la ventana.
@@ -143,7 +148,8 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
       >
         <div ref={panelRef} className="pointer-events-auto w-full max-w-md text-center">
           <p className="sr-only" role="status">
-            Match confirmado con {opponent.username}. Puedes enviarle un mensaje o seguir explorando.
+            Match confirmado con {opponent.username}. Puedes enviarle un mensaje
+            {status.discordInviteUrl ? ', entrar al canal de voz' : ''} o seguir explorando.
           </p>
 
           {/* El ancho sigue al tamaño del avatar: la separación entre los dos
@@ -197,6 +203,16 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
             >
               <ChatCircle className="h-[18px] w-[18px]" /> Enviar mensaje
             </button>
+            {status.discordInviteUrl && (
+              <button
+                type="button"
+                onClick={openDiscord}
+                disabled={!interactive}
+                className="mf-cta-2 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-[#5865F2]/45 bg-[#5865F2]/15 px-5 text-sm font-semibold text-[#cdd2ff] transition-colors hover:bg-[#5865F2]/25 disabled:opacity-45"
+              >
+                <DiscordLogo weight="fill" className="h-[18px] w-[18px]" /> Entrar al canal de voz
+              </button>
+            )}
             <button
               onClick={() => close('dismiss')}
               disabled={!interactive}

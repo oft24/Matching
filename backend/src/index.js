@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import app from './app.js';
 import { connectDatabase } from './config/database.js';
+import { cleanupExpiredDiscordChannels } from './services/discordService.js';
 
 dotenv.config();
 
@@ -11,6 +12,15 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`Matching API running on http://localhost:${PORT}`);
   });
+  void cleanupExpiredDiscordChannels({ force: true }).catch((error) => {
+    console.error('Discord startup cleanup error:', error.message);
+  });
+  const cleanupTimer = setInterval(() => {
+    void cleanupExpiredDiscordChannels({ force: true }).catch((error) => {
+      console.error('Discord interval cleanup error:', error.message);
+    });
+  }, 10 * 60 * 1000);
+  cleanupTimer.unref();
 }
 
 start().catch((err) => {

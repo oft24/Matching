@@ -1,4 +1,11 @@
 import { prisma } from '../config/prisma.js';
+import {
+  cleanupExpiredDiscordChannels,
+  deleteDiscordChannel,
+  getDiscordChannelMetadata,
+  provisionDiscordChannel,
+  setDiscordChannelMetadata,
+} from './discordService.js';
 
 const MATCH_TTL_MS = 5 * 60 * 1000;
 
@@ -170,46 +177,6 @@ export async function getQueueStatus(userId) {
   return { status: 'idle' };
 }
 
-async function createDiscordInvite(match) {
-  const guildId = process.env.DISCORD_GUILD_ID;
-  const botToken = process.env.DISCORD_BOT_TOKEN;
-
-  if (guildId && botToken) {
-    try {
-      const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bot ${botToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: `squad-${match.id.slice(-6)}`,
-          type: 2,
-        }),
-      });
-      if (res.ok) {
-        const channel = await res.json();
-        const inviteRes = await fetch(`https://discord.com/api/v10/channels/${channel.id}/invites`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bot ${botToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ max_age: 86400, max_uses: 2 }),
-        });
-        if (inviteRes.ok) {
-          const invite = await inviteRes.json();
-          return `https://discord.gg/${invite.code}`;
-        }
-      }
-    } catch (err) {
-      console.error('Discord API error:', err.message);
-    }
-  }
-
-  return null;
-}
-
 async function returnPlayerToQueue(match, userId) {
   const isPlayer1 = match.player1Id === userId;
   const filters = match.filters?.[isPlayer1 ? 'player1' : 'player2'];
@@ -260,8 +227,30 @@ export async function respondToMatch(userId, matchId, action) {
       return { status: 'pending', waitingForOpponent: true };
     }
 
-    const inviteUrl = await createDiscordInvite(updated);
-    const final = await prisma.liveMatch.update({ where: { id: matchId }, data: { status: 'accepted', discordInviteUrl: inviteUrl } });
+    // Solo una de las dos solicitudes reclama la provision de Discord. La otra
+    // puede responder de inmediato y recibira la invitacion en el siguiente sondeo.
+    const claim = await prisma.liveMatch.updateMany({
+      where: { id: matchId, status: 'pending' },
+      data: { status: 'accepted' },
+    });
+    if (!claim.count) {
+      const final = await prisma.liveMatch.findUnique({ where: { id: matchId } });
+      return { status: final?.status ?? 'accepted', discordInviteUrl: final?.discordInviteUrl ?? null };
+    }
+
+    const discord = await provisionDiscordChannel(updated);
+    if (!discord) return { status: 'accepted', discordInviteUrl: null };
+
+    const final = await prisma.liveMatch.update({
+      where: { id: matchId },
+      data: {
+        discordInviteUrl: discord.inviteUrl,
+        filters: setDiscordChannelMetadata(updated.filters, {
+          channelId: discord.channelId,
+          expiresAt: discord.expiresAt,
+        }),
+      },
+    });
     return { status: 'accepted', discordInviteUrl: final.discordInviteUrl };
   }
 
@@ -273,10 +262,27 @@ export async function closeMatch(userId, matchId) {
     where: { id: matchId, status: 'accepted', OR: [{ player1Id: userId }, { player2Id: userId }] },
   });
   if (!match) return { error: 'Match no disponible' };
+  const metadata = getDiscordChannelMetadata(match);
   await prisma.$transaction([
     prisma.liveMatch.update({ where: { id: matchId }, data: { status: 'closed' } }),
     prisma.queueEntry.deleteMany({ where: { userId: { in: [match.player1Id, match.player2Id] } } }),
   ]);
+  if (metadata?.channelId) {
+    try {
+      if (await deleteDiscordChannel(metadata.channelId)) {
+        await prisma.liveMatch.update({
+          where: { id: matchId },
+          data: {
+            discordInviteUrl: null,
+            filters: setDiscordChannelMetadata(match.filters, null),
+          },
+        });
+      }
+    } catch (error) {
+      // Conservamos los metadatos para que la limpieza posterior pueda reintentarlo.
+      console.error(`Discord close cleanup error for match ${matchId}:`, error.message);
+    }
+  }
   return { status: 'closed' };
 }
 
@@ -294,4 +300,10 @@ export async function expireStaleMatches() {
     where: { status: 'pending', expiresAt: { lt: new Date() } },
     data: { status: 'expired' },
   });
+  try {
+    await cleanupExpiredDiscordChannels();
+  } catch (error) {
+    // Discord es complementario: su limpieza no puede tumbar el matchmaking.
+    console.error('Discord scheduled cleanup error:', error.message);
+  }
 }

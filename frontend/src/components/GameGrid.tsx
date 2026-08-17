@@ -1,4 +1,5 @@
-import { Check } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { CaretDown, Check } from '@phosphor-icons/react';
 import type { Game } from '../types';
 
 interface GameGridProps {
@@ -10,19 +11,31 @@ interface GameGridProps {
 
 const GAME_IMAGES: Record<string, string> = {
   lol: 'games/lol.jpg',
-  valorant: 'games/valorant.png',
+  valorant: 'games/valorant.webp',
   apex: 'games/apex.jpg',
   fortnite: 'games/fortnite.png',
+  'marvel-rivals': 'games/marvel-rivals.webp',
+  'rainbow-six': 'games/rainbow-six.webp',
+  warzone: 'games/warzone.webp',
+  minecraft: 'games/minecraft.webp',
   roblox: 'games/roblox.png',
   'rocket-league': 'games/rocket-league.jpg',
   overwatch: 'games/overwatch.jpg',
   cs2: 'games/cs2.jpg',
   dota2: 'games/dota2.jpg',
+  pubg: 'games/pubg.webp',
+  gta5: 'games/gta5.webp',
+  'dead-by-daylight': 'games/dead-by-daylight.webp',
 };
 
 const publicAsset = (asset: string) => `${import.meta.env.BASE_URL}${asset}`;
+const INITIAL_GAME_COUNT = 8;
 
 export default function GameGrid({ games, selected, onSelect, disabled }: GameGridProps) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleGames = expanded ? games : games.slice(0, INITIAL_GAME_COUNT);
+  const hiddenCount = Math.max(0, games.length - visibleGames.length);
+
   return (
     <section aria-labelledby="game-selector-title" aria-disabled={disabled} className={`mb-8 transition-opacity ${disabled ? 'opacity-55' : ''}`}>
       <div className="mb-5 flex items-end justify-between gap-4">
@@ -35,8 +48,8 @@ export default function GameGrid({ games, selected, onSelect, disabled }: GameGr
         <p className="hidden text-sm text-slate-500 sm:block">{games.length} juegos disponibles</p>
       </div>
 
-      <div className="stagger grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {games.map((game) => {
+      <div id="game-grid" className="stagger grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        {visibleGames.map((game) => {
           const isSelected = selected === game.id;
           return (
             <button
@@ -50,7 +63,7 @@ export default function GameGrid({ games, selected, onSelect, disabled }: GameGr
               style={{ '--game-color': game.color } as React.CSSProperties}
             >
               <img
-                src={publicAsset(GAME_IMAGES[game.id])}
+                src={publicAsset(GAME_IMAGES[game.id] ?? 'favicon.svg')}
                 alt=""
                 loading="lazy"
                 className="game-card-image"
@@ -71,6 +84,21 @@ export default function GameGrid({ games, selected, onSelect, disabled }: GameGr
           );
         })}
       </div>
+
+      {hiddenCount > 0 && (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            disabled={disabled}
+            aria-expanded={expanded}
+            aria-controls="game-grid"
+            className="ghost-button inline-flex min-h-10 items-center justify-center gap-2 px-4 text-sm disabled:cursor-not-allowed"
+          >
+            Ver {hiddenCount} juegos más <CaretDown className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </section>
   );
 }

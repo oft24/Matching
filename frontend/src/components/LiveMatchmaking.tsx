@@ -36,7 +36,14 @@ export default function LiveMatchmaking({ filters, onChange, onLockChange }: Liv
   // siguiente sondeo, que es cuando el backend ya lo trae.
   const announceCelebration = useCallback((nextStatus: QueueStatus) => {
     if (!nextStatus.matchId || !nextStatus.opponent) return;
-    if (celebratedMatchRef.current === nextStatus.matchId) return;
+    if (celebratedMatchRef.current === nextStatus.matchId) {
+      // Discord puede terminar de crear el canal unos segundos despues del
+      // match. Actualizamos la escena abierta sin repetir la celebracion.
+      setCelebration((current) => current?.matchId === nextStatus.matchId
+        ? { ...current, ...nextStatus }
+        : current);
+      return;
+    }
     celebratedMatchRef.current = nextStatus.matchId;
     setCelebration(nextStatus);
     // El dock retiene la ventana de chat mientras la celebración está en pantalla

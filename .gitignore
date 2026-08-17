@@ -13,3 +13,4 @@ venv/
 skills-lock.json
 release/
 desktop-artifacts/
+.codex-run/

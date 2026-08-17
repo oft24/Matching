@@ -10,7 +10,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:discord": "node scripts/testDiscordService.js"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
