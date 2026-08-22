@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, ChatCircle, DiscordLogo } from '@phosphor-icons/react';
+import { ArrowRight, ChatCircle, DiscordLogo, GameController, LinkSimple, LockKey, ShieldCheck, UsersThree } from '@phosphor-icons/react';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
 import type { QueueStatus } from '../types';
+import { DEFAULT_GAMES } from '../data/games';
 
 /** Con qué intención salió el usuario de la celebración. */
 export type MatchIntent = 'message' | 'dismiss';
@@ -109,6 +110,7 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
   const yo = user?.username ?? 'Tú';
   const avatarSize = compact ? 92 : 116;
   const heroHeight = compact ? 118 : 150;
+  const game = DEFAULT_GAMES.find((item) => item.id === status.game);
   const openDiscord = () => {
     if (!status.discordInviteUrl) return;
     window.open(status.discordInviteUrl, '_blank', 'noopener,noreferrer');
@@ -137,6 +139,9 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
         style={{ background: 'radial-gradient(52% 42% at 50% 42%, color-mix(in srgb, var(--color-accent) 24%, transparent), transparent 70%)' }}
         aria-hidden="true"
       />
+      <div className="mf-grid pointer-events-none fixed inset-0" aria-hidden="true" />
+      <span className="mf-energy-lane mf-energy-lane-a" aria-hidden="true" />
+      <span className="mf-energy-lane mf-energy-lane-b" aria-hidden="true" />
 
       {/* El envoltorio no intercepta el clic fuera: sólo el panel recibe puntero */}
       <div
@@ -146,11 +151,16 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
           paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
         }}
       >
-        <div ref={panelRef} className="pointer-events-auto w-full max-w-md text-center">
+        <div ref={panelRef} className="pointer-events-auto w-full max-w-lg text-center">
           <p className="sr-only" role="status">
             Match confirmado con {opponent.username}. Puedes enviarle un mensaje
             {status.discordInviteUrl ? ', entrar al canal de voz' : ''} o seguir explorando.
           </p>
+
+          <div className="mf-eyebrow mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--color-accent)]/25 bg-[var(--color-accent)]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-accent-200)]">
+            {game ? <GameController weight="fill" className="h-3.5 w-3.5" /> : <LinkSimple weight="bold" className="h-3.5 w-3.5" />}
+            {game?.name ?? 'Conexión confirmada'}
+          </div>
 
           {/* El ancho sigue al tamaño del avatar: la separación entre los dos
               perfiles se mantiene igual al compactar la escena. */}
@@ -165,6 +175,8 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
               <Avatar name={opponent.username} src={opponent.avatar} size={avatarSize} radius={16} brand className="shadow-[0_18px_40px_rgba(0,0,0,0.55)] ring-1 ring-[var(--color-accent)]/35" />
             </div>
 
+            <span className="mf-connection-line" aria-hidden="true"><i /></span>
+
             {/* Impacto: la marca de conexión, con ondas y chispas */}
             <div className="pointer-events-none absolute left-1/2 z-10" style={{ top: avatarSize / 2 + 8 }} aria-hidden="true">
               <span className="mf-ring absolute left-1/2 top-1/2 h-16 w-16 rounded-full border border-[var(--color-accent)]" />
@@ -177,9 +189,7 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
                 />
               ))}
               <span className="mf-impact absolute left-1/2 top-1/2 grid h-14 w-14 place-items-center rounded-full bg-[var(--color-bg)] text-[var(--color-accent)] shadow-[0_0_0_1px_var(--color-accent),0_0_34px_color-mix(in_srgb,var(--color-accent)_45%,transparent)]">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-                  <circle cx="8" cy="8" r="3" /><circle cx="16" cy="16" r="3" /><path d="M10.2 9.8L13.8 14.2" />
-                </svg>
+                <LinkSimple weight="bold" className="h-7 w-7" />
               </span>
             </div>
           </div>
@@ -193,6 +203,26 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
           <p className={`mf-sub text-[15px] text-[color-mix(in_srgb,var(--color-text)_66%,transparent)] ${compact ? 'mt-2' : 'mt-3'}`}>
             A {opponent.username} también le interesó jugar contigo.
           </p>
+          {status.compatibility != null && (
+            <div className="mf-compat mx-auto mt-4 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-slate-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />
+              <b className="text-white">{status.compatibility}%</b> de compatibilidad
+            </div>
+          )}
+
+          <section className="mf-room-card" aria-label="Espacio privado del match">
+            <div className="mf-room-icon"><LockKey weight="fill" /></div>
+            <div className="min-w-0 text-left">
+              <span className="mf-room-state"><i /> Match privado activo</span>
+              <strong>{status.discordInviteUrl ? 'Sala de voz para ustedes dos' : 'Chat directo para ustedes dos'}</strong>
+              <p>{status.discordInviteUrl ? 'La invitación abre una sala temporal con límite de 2 personas.' : 'Conecten Discord desde Ajustes para habilitar voz privada en el siguiente match.'}</p>
+            </div>
+          </section>
+
+          <div className="mf-trust-row" aria-label="Protecciones del match">
+            <span><UsersThree weight="fill" /> Sólo 2 jugadores</span>
+            <span><ShieldCheck weight="fill" /> Consentimiento mutuo</span>
+          </div>
 
           <div className={`flex flex-col items-stretch gap-2.5 sm:mx-auto sm:max-w-[320px] ${compact ? 'mt-5' : 'mt-8'}`}>
             <button
@@ -210,7 +240,7 @@ export default function MatchFoundOverlay({ status, onClose }: MatchFoundOverlay
                 disabled={!interactive}
                 className="mf-cta-2 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-[#5865F2]/45 bg-[#5865F2]/15 px-5 text-sm font-semibold text-[#cdd2ff] transition-colors hover:bg-[#5865F2]/25 disabled:opacity-45"
               >
-                <DiscordLogo weight="fill" className="h-[18px] w-[18px]" /> Entrar al canal de voz
+                <DiscordLogo weight="fill" className="h-[18px] w-[18px]" /> Abrir mi sala privada
               </button>
             )}
             <button

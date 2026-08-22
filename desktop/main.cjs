@@ -2,8 +2,8 @@ const { app, BrowserWindow, Menu, Notification, Tray, ipcMain, nativeImage, sess
 const fs = require('node:fs');
 const path = require('node:path');
 
-const APP_ID = 'com.matching.desktop';
-const SESSION_PARTITION = 'persist:matching-desktop';
+const APP_ID = 'com.q2play.desktop';
+const SESSION_PARTITION = 'persist:q2play-desktop';
 const smokeTest = process.argv.includes('--smoke-test');
 const devUrlIndex = process.argv.indexOf('--dev-url');
 const devUrl = devUrlIndex >= 0 ? process.argv[devUrlIndex + 1] : null;
@@ -13,7 +13,7 @@ let tray = null;
 let quitting = false;
 
 app.setAppUserModelId(APP_ID);
-app.setName('Matching');
+app.setName('q2play');
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -53,12 +53,12 @@ function createTray() {
   const icon = createBrandIcon(20);
   if (icon.isEmpty()) return;
   tray = new Tray(icon);
-  tray.setToolTip('Matching');
+  tray.setToolTip('q2play');
   tray.on('double-click', showMainWindow);
   const rebuildMenu = () => {
     const startsWithWindows = app.getLoginItemSettings().openAtLogin;
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: 'Abrir Matching', click: showMainWindow },
+      { label: 'Abrir q2play', click: showMainWindow },
       {
         label: 'Abrir al iniciar Windows',
         type: 'checkbox',
@@ -92,7 +92,7 @@ function createWindow() {
     show: false,
     // Fondo del diseño: evita el destello de un color distinto mientras carga.
     backgroundColor: '#070b14',
-    title: 'Matching',
+    title: 'q2play',
     icon: icon.isEmpty() ? undefined : icon,
     // La cabecera de la app hace de barra de título; Windows sólo dibuja los
     // controles de ventana, tintados con la paleta de la marca.

@@ -11,6 +11,7 @@ import {
 } from '../services/googleAuth.js';
 
 const router = Router();
+const TERMS_VERSION = '2026-08-22';
 
 const USER_FIELDS = {
   id: true,
@@ -40,7 +41,7 @@ function session(user) {
 router.post('/register', async (req, res) => {
   if (!isDatabaseConfigured()) return dbNotReady(req, res);
 
-  const { username, email, password } = req.body;
+  const { username, email, password, acceptTerms, termsVersion } = req.body;
   const cleanEmail = normalizeEmail(email);
   const cleanUsername = String(username ?? '').trim();
 
@@ -49,6 +50,9 @@ router.post('/register', async (req, res) => {
   }
   if (password.length < 6) {
     return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+  }
+  if (acceptTerms !== true || termsVersion !== TERMS_VERSION) {
+    return res.status(400).json({ error: 'Debes aceptar los Términos y el Aviso de Privacidad vigentes' });
   }
 
   try {
@@ -82,6 +86,8 @@ router.post('/register', async (req, res) => {
         password: await bcrypt.hash(password, 10),
         // Sin icono: la interfaz muestra iniciales hasta que se conecte Riot o se elija uno.
         avatar: null,
+        termsAcceptedAt: new Date(),
+        termsVersion: TERMS_VERSION,
       },
       select: USER_FIELDS,
     });
@@ -176,8 +182,12 @@ router.post('/google', async (req, res) => {
 
     const existing = await prisma.user.findFirst({
       where: { OR: [{ googleId: profile.googleId }, { email: profile.email }] },
-      select: { id: true, avatar: true },
+      select: { id: true, avatar: true, termsAcceptedAt: true },
     });
+
+    if (!existing && (req.body?.acceptTerms !== true || req.body?.termsVersion !== TERMS_VERSION)) {
+      return res.status(400).json({ error: 'Para crear una cuenta con Google debes aceptar los Términos y el Aviso de Privacidad' });
+    }
 
     const user = existing
       ? await prisma.user.update({
@@ -185,6 +195,9 @@ router.post('/google', async (req, res) => {
           data: {
             googleId: profile.googleId,
             emailVerified: new Date(),
+            ...(!existing.termsAcceptedAt && req.body?.acceptTerms === true
+              ? { termsAcceptedAt: new Date(), termsVersion: TERMS_VERSION }
+              : {}),
             // El avatar de Google solo rellena el hueco: si el usuario ya
             // eligió uno o conectó Riot, se respeta su elección.
             ...(existing.avatar ? {} : { avatar: profile.picture }),
@@ -198,6 +211,8 @@ router.post('/google', async (req, res) => {
             googleId: profile.googleId,
             avatar: profile.picture,
             emailVerified: new Date(),
+            termsAcceptedAt: new Date(),
+            termsVersion: TERMS_VERSION,
           },
           select: USER_FIELDS,
         });
@@ -216,12 +231,34 @@ router.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
 
+/** Elimina la cuenta autenticada y cualquier match que quedaría huérfano. */
+router.delete('/me', requireAuth, async (req, res) => {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.liveMatch.deleteMany({
+        where: {
+          OR: [
+            { player1Id: req.user.id },
+            { player2Id: req.user.id },
+          ],
+        },
+      });
+      await tx.user.delete({ where: { id: req.user.id } });
+    });
+    return res.status(204).end();
+  } catch (err) {
+    console.error('Delete account error:', err);
+    return res.status(500).json({ error: 'No se pudo eliminar la cuenta' });
+  }
+});
+
 /** El frontend lee de aquí el client id, así no hace falta compilarlo dentro. */
 router.get('/config', (_req, res) => {
   res.json({
     database: isDatabaseConfigured(),
     google: isGoogleConfigured(),
     googleClientId: googleClientId(),
+    termsVersion: TERMS_VERSION,
   });
 });
 

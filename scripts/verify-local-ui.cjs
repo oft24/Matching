@@ -11,7 +11,7 @@ const { PrismaClient } = require(path.join(root, 'backend/node_modules/@prisma/c
 const jwt = require(path.join(root, 'backend/node_modules/jsonwebtoken'));
 
 const prisma = new PrismaClient();
-const url = process.env.MATCHING_LOCAL_URL || 'http://127.0.0.1:5174';
+const url = process.env.Q2PLAY_LOCAL_URL || 'http://127.0.0.1:5174';
 const outputDir = path.join(root, '.codex-run');
 const screenshotPath = path.join(outputDir, 'local-ui.png');
 
@@ -77,7 +77,7 @@ async function verify() {
   });
 
   await window.loadURL(url);
-  await window.webContents.executeJavaScript(`localStorage.setItem('matching_token', ${JSON.stringify(token)})`);
+  await window.webContents.executeJavaScript(`localStorage.setItem('q2play_token', ${JSON.stringify(token)})`);
   const reloaded = new Promise((resolve) => window.webContents.once('did-finish-load', resolve));
   window.reload();
   await reloaded;

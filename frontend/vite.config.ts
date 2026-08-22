@@ -17,16 +17,16 @@ export default defineConfig(({ mode }) => {
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Matching — Encuentra tu equipo ideal',
-        short_name: 'Matching',
-        description: 'Conecta con jugadores que comparten tu juego, rango, rol y estilo de juego.',
+        name: 'q2play — El match correcto cambia la partida',
+        short_name: 'q2play',
+        description: 'Encuentra jugadores con tu mismo nivel, intención y química de equipo.',
         lang: 'es',
         start_url: '/',
         scope: '/',
         display: 'standalone',
         orientation: 'portrait-primary',
-        theme_color: '#7c3aed',
-        background_color: '#070b14',
+        theme_color: '#090b12',
+        background_color: '#090b12',
         icons: [
           { src: '/icons/pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icons/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
             urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'matching-api',
+              cacheName: 'q2play-api',
               networkTimeoutSeconds: 8,
               expiration: { maxEntries: 60, maxAgeSeconds: 60 * 5 },
               cacheableResponse: { statuses: [0, 200] },
@@ -95,6 +95,19 @@ export default defineConfig(({ mode }) => {
     port: 5173,
     proxy: {
       '/api': 'http://localhost:4000',
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('@phosphor-icons') || id.includes('lucide-react')) return 'icons';
+          if (id.includes('react')) return 'react';
+          if (id.includes('axios')) return 'http';
+          return 'vendor';
+        },
+      },
     },
   },
   };

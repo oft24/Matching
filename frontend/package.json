@@ -1,5 +1,5 @@
 {
-  "name": "matching-frontend",
+  "name": "q2play-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -12,7 +12,6 @@
     "@phosphor-icons/react": "^2.1.10",
     "axios": "^1.7.9",
     "lucide-react": "^0.469.0",
-    "matching": "file:..",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

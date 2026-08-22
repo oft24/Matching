@@ -24,7 +24,7 @@ export default function Header({ level, xp, xpToNext, activeNav }: HeaderProps) 
       <div className="mr-auto min-w-0">
         <p className="section-kicker">{current.label}</p>
         <p className="mt-0.5 truncate text-[15px] font-medium text-[var(--color-text)]">
-          {user ? `Hola, ${user.username}` : 'Matching'}
+          {user ? `Hola, ${user.username}` : 'q2play'}
         </p>
       </div>
 

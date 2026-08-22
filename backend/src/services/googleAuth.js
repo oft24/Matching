@@ -13,11 +13,14 @@ export class GoogleAuthError extends Error {
 }
 
 export function isGoogleConfigured() {
-  return Boolean(process.env.GOOGLE_CLIENT_ID);
+  // El client ID por sí solo no garantiza que el dominio actual esté
+  // autorizado en Google Cloud. Se habilita explícitamente después de agregar
+  // el origen de producción para no renderizar un iframe que Google rechazará.
+  return Boolean(process.env.GOOGLE_CLIENT_ID) && process.env.GOOGLE_AUTH_ENABLED === 'true';
 }
 
 export function googleClientId() {
-  return process.env.GOOGLE_CLIENT_ID || null;
+  return isGoogleConfigured() ? process.env.GOOGLE_CLIENT_ID : null;
 }
 
 // Las claves de Google rotan cada pocas horas. Se cachean respetando el

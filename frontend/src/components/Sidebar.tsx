@@ -42,7 +42,7 @@ export default function Sidebar({ active, onNavigate, open, onClose }: SidebarPr
       >
         <div className="flex h-[72px] flex-shrink-0 items-center justify-between border-b border-white/[0.06] px-4">
           <div className="min-w-0">
-            <h2 className="truncate text-[15px] font-bold text-[#f2f3f5]">Matching</h2>
+            <h2 className="truncate text-[15px] font-bold text-[#f2f3f5]">q2play</h2>
             <p className="text-[11px] text-slate-500">Juega. Conecta. Compite.</p>
           </div>
           <button onClick={onClose} aria-label="Cerrar menú" className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-white lg:hidden">

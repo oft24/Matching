@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { CircleNotch, SignIn, UserPlus, X } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import GoogleSignInButton from './GoogleSignInButton';
+import LegalModal from './LegalModal';
 import { parseAuthError } from '../lib/authErrors';
+import { LEGAL_VERSION, type LegalSection } from '../data/legal';
 
 interface LoginModalProps {
   open: boolean;
@@ -18,6 +20,9 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [legalOpen, setLegalOpen] = useState(false);
+  const [legalSection, setLegalSection] = useState<LegalSection>('terms');
 
   useEffect(() => {
     if (open) setMode(initialMode);
@@ -30,6 +35,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
     setUsername('');
     setEmail('');
     setPassword('');
+    setTermsAccepted(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +44,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
     setLoading(true);
     try {
       if (mode === 'login') await login(email, password);
-      else await register(username, email, password);
+      else await register(username, email, password, termsAccepted, LEGAL_VERSION);
       reset();
       onClose();
     } catch (err: unknown) {
@@ -51,6 +57,11 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
   const switchMode = (m: 'login' | 'register') => {
     setMode(m);
     setError('');
+  };
+
+  const showLegal = (section: LegalSection) => {
+    setLegalSection(section);
+    setLegalOpen(true);
   };
 
   return (
@@ -72,7 +83,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
           <p className="text-sm text-slate-400">
             {mode === 'login'
               ? 'Accede a tu perfil y dashboard de matchmaking'
-              : 'Únete a la comunidad Matching'}
+              : 'Únete a la comunidad q2play'}
           </p>
         </div>
 
@@ -96,7 +107,13 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
         </div>
 
         <div className="mb-5 flex justify-center">
-          <GoogleSignInButton theme="dark" onSignedIn={() => { reset(); onClose(); }} />
+          <GoogleSignInButton
+            theme="dark"
+            onSignedIn={() => { reset(); onClose(); }}
+            acceptTerms={mode === 'register' && termsAccepted}
+            termsVersion={LEGAL_VERSION}
+            disabled={mode === 'register' && !termsAccepted}
+          />
         </div>
 
         <div className="mb-5 flex items-center gap-3">
@@ -132,6 +149,18 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
             />
           </div>
 
+          {mode === 'register' && (
+            <div className="legal-consent">
+              <input id="modal-terms" type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
+              <span>
+                <label htmlFor="modal-terms">Tengo 18 años o más y acepto los </label>
+                <button type="button" onClick={() => showLegal('terms')}>Términos</button>, el{' '}
+                <button type="button" onClick={() => showLegal('privacy')}>Aviso de Privacidad</button> y las{' '}
+                <button type="button" onClick={() => showLegal('rules')}>Reglas</button>.
+              </span>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs text-slate-400 mb-1.5 font-medium">Contraseña</label>
             <input
@@ -152,7 +181,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (mode === 'register' && !termsAccepted)}
             className="gradient-btn flex w-full items-center justify-center gap-2 py-3 text-sm font-semibold
               disabled:opacity-50"
           >
@@ -161,6 +190,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }: Log
           </button>
         </form>
       </div>
+      <LegalModal open={legalOpen} section={legalSection} onSectionChange={setLegalSection} onClose={() => setLegalOpen(false)} />
     </div>
   );
 }

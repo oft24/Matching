@@ -1,5 +1,5 @@
 {
-  "name": "matching-backend",
+  "name": "q2play-backend",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -11,6 +11,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
+    "test": "npm run test:matching && npm run test:discord",
+    "test:matching": "node scripts/testMatchingCompatibility.js",
     "test:discord": "node scripts/testDiscordService.js"
   },
   "dependencies": {

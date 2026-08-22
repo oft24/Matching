@@ -133,7 +133,7 @@ export default function GuestLanding({ games, selected, onSelect, onOpenLogin }:
             Menos tiempo buscando. Más tiempo jugando.
           </h2>
           <p className="mt-4 text-sm leading-7 text-slate-400 sm:text-base">
-            Matching compara las preferencias que sí cambian una partida: nivel, rol, comunicación, objetivos y compatibilidad.
+            q2play compara las preferencias que sí cambian una partida: nivel, rol, comunicación, objetivos y compatibilidad.
           </p>
           <div className="stagger mt-6 space-y-3">
             {['Preferencias claras antes de conectar', 'Aceptación mutua y contacto directo', 'Tu búsqueda permanece activa hasta hacer match'].map((item) => (

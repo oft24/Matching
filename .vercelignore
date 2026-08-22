@@ -8,6 +8,7 @@ desktop-artifacts/
 .codex-run/
 .agents/
 .vercel/
+**/.vercel/
 
 # Archivos locales y credenciales
 .env
@@ -19,5 +20,4 @@ skills-lock.json
 node_modules
 **/node_modules
 
-# Servicio Python auxiliar de la raíz (anclado: no debe tocar backend/src/services)
-/services/
+# services/python forma parte del despliegue como servicio privado de scoring.

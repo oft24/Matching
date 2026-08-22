@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { resolveAvatarSrc } from '../data/gameAvatars';
 
 const ACCENTS = ['#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#f97316', '#64748b'];
 
@@ -51,7 +52,8 @@ export default function Avatar({ name, src, size = 44, brand = false, status, ra
   const [failed, setFailed] = useState(false);
   const fontSize = Math.max(11, Math.round(size * 0.34));
   const borderRadius = radius ?? Math.round(size * 0.25);
-  const showImage = isRealAvatar(src) && !failed;
+  const resolvedSrc = resolveAvatarSrc(src);
+  const showImage = isRealAvatar(resolvedSrc) && !failed;
 
   useEffect(() => setFailed(false), [src]);
 
@@ -59,7 +61,7 @@ export default function Avatar({ name, src, size = 44, brand = false, status, ra
     <div className={`relative flex-shrink-0 ${className}`} style={{ width: size, height: size }}>
       {showImage ? (
         <img
-          src={src}
+          src={resolvedSrc ?? undefined}
           alt={`Foto de perfil de ${name}`}
           onError={() => setFailed(true)}
           className="h-full w-full object-cover"

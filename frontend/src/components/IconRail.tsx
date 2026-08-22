@@ -30,7 +30,7 @@ export default function IconRail({ active, onNavigate }: IconRailProps) {
           <circle cx="16" cy="16" r="3" />
           <path d="M10.2 9.8L13.8 14.2" />
         </svg>
-        <span className="rail-tip">Matching</span>
+        <span className="rail-tip">q2play</span>
       </button>
 
       <span className="mb-1 h-px w-8 bg-[var(--color-neutral-800)]" aria-hidden="true" />

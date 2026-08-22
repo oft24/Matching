@@ -20,7 +20,7 @@ app.get('/api/health', async (_req, res) => {
   const db = await checkDatabaseHealth();
   res.status(db.ok ? 200 : 503).json({
     status: db.ok ? 'ok' : 'degraded',
-    service: 'matching-api',
+    service: 'q2play-api',
     database: db.ok ? 'connected' : db.error,
   });
 });

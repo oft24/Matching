@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   getMe,
+  deleteAccount as apiDeleteAccount,
   login as apiLogin,
   loginWithGoogle as apiLoginWithGoogle,
   logout as apiLogout,
@@ -13,17 +14,18 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string, acceptTerms: boolean, termsVersion: string) => Promise<void>;
   /** Cambia el ID token de Google por una sesión. Vale para entrar y registrarse. */
-  loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithGoogle: (credential: string, acceptTerms?: boolean, termsVersion?: string) => Promise<void>;
   logout: () => void;
+  deleteAccount: () => Promise<void>;
   updateUser: (user: AuthUser) => void;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const TOKEN_KEY = 'matching_token';
+const TOKEN_KEY = 'q2play_token';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -56,18 +58,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     startSession(u, token);
   }, [startSession]);
 
-  const register = useCallback(async (username: string, email: string, password: string) => {
-    const { user: u, token } = await apiRegister(username, email, password);
+  const register = useCallback(async (username: string, email: string, password: string, acceptTerms: boolean, termsVersion: string) => {
+    const { user: u, token } = await apiRegister(username, email, password, acceptTerms, termsVersion);
     startSession(u, token);
   }, [startSession]);
 
-  const loginWithGoogle = useCallback(async (credential: string) => {
-    const { user: u, token } = await apiLoginWithGoogle(credential);
+  const loginWithGoogle = useCallback(async (credential: string, acceptTerms = false, termsVersion?: string) => {
+    const { user: u, token } = await apiLoginWithGoogle(credential, acceptTerms, termsVersion);
     startSession(u, token);
   }, [startSession]);
 
   const updateUser = useCallback((nextUser: AuthUser) => setUser(nextUser), []);
   const refreshUser = useCallback(async () => setUser(await getMe()), []);
+  const deleteAccount = useCallback(async () => {
+    await apiDeleteAccount();
+    localStorage.removeItem(TOKEN_KEY);
+    setAuthToken(null);
+    setUser(null);
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -77,10 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       loginWithGoogle,
       logout,
+      deleteAccount,
       updateUser,
       refreshUser,
     }),
-    [user, login, register, loginWithGoogle, logout, updateUser, refreshUser],
+    [user, login, register, loginWithGoogle, logout, deleteAccount, updateUser, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

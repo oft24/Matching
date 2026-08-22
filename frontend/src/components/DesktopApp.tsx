@@ -9,7 +9,7 @@ const FEATURES = [
 
 /** Apartado de instalación de la app de escritorio (Electron). */
 export default function DesktopApp() {
-  const isDesktop = window.matchingDesktop?.isDesktop === true;
+  const isDesktop = window.q2playDesktop?.isDesktop === true;
 
   return (
     <div className="surface rounded-[var(--radius-lg)] p-6">
@@ -17,7 +17,7 @@ export default function DesktopApp() {
         <div className="min-w-0">
           <h3 className="text-sm font-medium text-[var(--color-text)]">App de escritorio</h3>
           <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--color-text)_62%,transparent)]">
-            Matching para Windows, con bandeja del sistema y notificaciones.
+          q2play para Windows, con bandeja del sistema y notificaciones.
           </p>
         </div>
 

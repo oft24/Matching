@@ -59,6 +59,9 @@ interface GoogleSignInButtonProps {
   /** `dark` para superficies oscuras (modal), `light` para la pantalla previa. */
   theme?: 'dark' | 'light';
   onSignedIn?: () => void;
+  acceptTerms?: boolean;
+  termsVersion?: string;
+  disabled?: boolean;
 }
 
 type Status = 'loading' | 'ready' | 'signing' | 'unavailable' | 'error';
@@ -68,11 +71,20 @@ type Status = 'loading' | 'ready' | 'signing' | 'unavailable' | 'error';
  * si Google no está disponible el componente se retira en silencio en vez de
  * plantar un error delante de un formulario que sí funciona.
  */
-export default function GoogleSignInButton({ theme = 'dark', onSignedIn }: GoogleSignInButtonProps) {
+export default function GoogleSignInButton({ theme = 'dark', onSignedIn, acceptTerms = false, termsVersion, disabled = false }: GoogleSignInButtonProps) {
   const { loginWithGoogle } = useAuth();
   const holder = useRef<HTMLDivElement>(null);
+  const consentRef = useRef({ acceptTerms, termsVersion });
+  const signedInRef = useRef(onSignedIn);
+  const loginRef = useRef(loginWithGoogle);
   const [status, setStatus] = useState<Status>('loading');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    consentRef.current = { acceptTerms, termsVersion };
+    signedInRef.current = onSignedIn;
+    loginRef.current = loginWithGoogle;
+  }, [acceptTerms, loginWithGoogle, onSignedIn, termsVersion]);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,8 +111,8 @@ export default function GoogleSignInButton({ theme = 'dark', onSignedIn }: Googl
             setError('');
             setStatus('signing');
             try {
-              await loginWithGoogle(credential);
-              onSignedIn?.();
+              await loginRef.current(credential, consentRef.current.acceptTerms, consentRef.current.termsVersion);
+              signedInRef.current?.();
             } catch (err) {
               if (cancelled) return;
               // Un fallo al canjear el token sí merece decirse: el usuario
@@ -135,7 +147,7 @@ export default function GoogleSignInButton({ theme = 'dark', onSignedIn }: Googl
   if (status === 'unavailable') return null;
 
   return (
-    <div className="flex w-full flex-col items-center gap-3">
+    <div className={`flex w-full flex-col items-center gap-3 ${disabled ? 'pointer-events-none opacity-45' : ''}`} aria-disabled={disabled}>
       {/* Google inyecta su iframe aquí; se oculta mientras no esté listo. */}
       <div ref={holder} className={status === 'loading' ? 'hidden' : ''} />
 

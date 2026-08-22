@@ -12,8 +12,8 @@ model User {
   id          String           @id @default(cuid())
   username    String           @unique
   email       String           @unique
-  // Sin contraseña: se entra con Google. Las cuentas antiguas conservan su
-  // hash, pero ya no hay ninguna ruta que lo compruebe.
+  // Opcional: las cuentas creadas con Google no necesitan contraseña; las
+  // cuentas de correo almacenan aquí el hash de bcrypt.
   password    String?
   googleId    String?          @unique
   avatar      String?
@@ -21,6 +21,8 @@ model User {
   level       Int              @default(1)
   xp          Int              @default(0)
   emailVerified DateTime?
+  termsAcceptedAt DateTime?
+  termsVersion String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   connections UserConnection[]

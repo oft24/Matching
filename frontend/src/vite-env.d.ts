@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface Window {
-  matchingDesktop?: {
+  q2playDesktop?: {
     isDesktop: boolean;
     platform: string;
     version: string;

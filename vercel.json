@@ -7,7 +7,20 @@
     "api": {
       "root": "backend/",
       "entrypoint": "src/app.js",
-      "framework": "express"
+      "framework": "express",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "scoring",
+          "format": "url",
+          "env": "PYTHON_SERVICE_URL"
+        }
+      ]
+    },
+    "scoring": {
+      "root": "services/python/",
+      "entrypoint": "app.main:app",
+      "framework": "fastapi"
     }
   },
   "rewrites": [

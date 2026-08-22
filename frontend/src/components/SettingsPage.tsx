@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PageHeader from './PageHeader';
 import Toggle from './Toggle';
 import DesktopApp from './DesktopApp';
+import LegalModal from './LegalModal';
+import { useAuth } from '../context/AuthContext';
+import { type LegalSection } from '../data/legal';
 
 const NOTIFICATIONS = [
   { key: 'notifMatches', label: 'Nuevos matches', desc: 'Cuando encontramos un jugador compatible' },
@@ -27,17 +30,50 @@ const INITIAL: Record<SettingKey, boolean> = {
   privacyVisible: true,
   privacyRequests: true,
 };
+const SETTINGS_KEY = 'q2play_preferences';
+
+function readPreferences() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
+    return {
+      settings: { ...INITIAL, ...(saved.settings ?? {}) } as Record<SettingKey, boolean>,
+      language: typeof saved.language === 'string' ? saved.language : 'es',
+      timezone: typeof saved.timezone === 'string' ? saved.timezone : 'gmt-6',
+    };
+  } catch {
+    return { settings: INITIAL, language: 'es', timezone: 'gmt-6' };
+  }
+}
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Record<SettingKey, boolean>>(INITIAL);
-  const [language, setLanguage] = useState('es');
-  const [timezone, setTimezone] = useState('gmt-6');
+  const { deleteAccount } = useAuth();
+  const [saved] = useState(readPreferences);
+  const [settings, setSettings] = useState<Record<SettingKey, boolean>>(saved.settings);
+  const [language, setLanguage] = useState(saved.language);
+  const [timezone, setTimezone] = useState(saved.timezone);
+  const [legalOpen, setLegalOpen] = useState(false);
+  const [legalSection, setLegalSection] = useState<LegalSection>('terms');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const set = (key: SettingKey) => (next: boolean) => setSettings((prev) => ({ ...prev, [key]: next }));
+  const showLegal = (section: LegalSection) => { setLegalSection(section); setLegalOpen(true); };
+
+  const removeAccount = async () => {
+    if (!window.confirm('¿Eliminar tu cuenta de q2play? Se borrarán perfil, conexiones, amistades, mensajes y matches. Esta acción no se puede deshacer.')) return;
+    setDeleting(true);
+    setDeleteError('');
+    try { await deleteAccount(); }
+    catch { setDeleteError('No pudimos eliminar la cuenta. Intenta de nuevo.'); setDeleting(false); }
+  };
+
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ settings, language, timezone }));
+  }, [language, settings, timezone]);
 
   return (
     <section className="mx-auto mb-8 max-w-4xl">
-      <PageHeader kicker="TU CUENTA" title="Ajustes" description="Personaliza cómo funciona Matching para ti." />
+      <PageHeader kicker="TU CUENTA" title="Ajustes" description="Personaliza cómo funciona q2play para ti." />
 
       <div className="stagger space-y-4">
         <Card title="Notificaciones" subtitle="Elige qué quieres que te avisemos.">
@@ -86,12 +122,24 @@ export default function SettingsPage() {
 
         <DesktopApp />
 
+        <Card title="Legal y seguridad" subtitle="Consulta los acuerdos que protegen cada match.">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <button type="button" onClick={() => showLegal('terms')} className="ghost-button px-4 py-3 text-sm">Términos</button>
+            <button type="button" onClick={() => showLegal('privacy')} className="ghost-button px-4 py-3 text-sm">Privacidad</button>
+            <button type="button" onClick={() => showLegal('rules')} className="ghost-button px-4 py-3 text-sm">Reglas de comunidad</button>
+          </div>
+        </Card>
+
         <div className="rounded-2xl border border-red-400/20 bg-red-400/[0.04] p-6">
           <h3 className="text-sm font-bold text-red-400">Zona de peligro</h3>
           <p className="mt-1 text-xs text-slate-400">Esta acción no se puede deshacer.</p>
-          <button className="danger-button mt-4 px-5 py-2.5 text-sm font-semibold">Eliminar cuenta</button>
+          <button type="button" disabled={deleting} onClick={() => void removeAccount()} className="danger-button mt-4 px-5 py-2.5 text-sm font-semibold disabled:opacity-50">
+            {deleting ? 'Eliminando…' : 'Eliminar cuenta'}
+          </button>
+          {deleteError ? <p className="mt-3 text-sm text-red-300" role="alert">{deleteError}</p> : null}
         </div>
       </div>
+      <LegalModal open={legalOpen} section={legalSection} onSectionChange={setLegalSection} onClose={() => setLegalOpen(false)} />
     </section>
   );
 }

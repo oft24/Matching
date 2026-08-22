@@ -19,7 +19,7 @@ import type {
 } from '../types';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'desktop' ? 'https://matching-2.vercel.app/api' : '/api'),
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'desktop' ? 'https://q2play.vercel.app/api' : '/api'),
   timeout: 15000,
 });
 
@@ -40,14 +40,16 @@ export async function register(
   username: string,
   email: string,
   password: string,
+  acceptTerms: boolean,
+  termsVersion: string,
 ): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>('/auth/register', { username, email, password });
+  const { data } = await api.post<AuthResponse>('/auth/register', { username, email, password, acceptTerms, termsVersion });
   return data;
 }
 
-/** Cambia el ID token de Google por una sesión de Matching. */
-export async function loginWithGoogle(credential: string): Promise<GoogleAuthResponse> {
-  const { data } = await api.post<GoogleAuthResponse>('/auth/google', { credential });
+/** Cambia el ID token de Google por una sesión de q2play. */
+export async function loginWithGoogle(credential: string, acceptTerms = false, termsVersion?: string): Promise<GoogleAuthResponse> {
+  const { data } = await api.post<GoogleAuthResponse>('/auth/google', { credential, acceptTerms, termsVersion });
   return data;
 }
 
@@ -58,6 +60,10 @@ export async function fetchAuthConfig(): Promise<AuthConfig> {
 
 export async function logout(): Promise<void> {
   await api.post('/auth/logout');
+}
+
+export async function deleteAccount(): Promise<void> {
+  await api.delete('/auth/me');
 }
 
 export async function getMe(): Promise<AuthUser> {

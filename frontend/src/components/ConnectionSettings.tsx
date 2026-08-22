@@ -22,6 +22,7 @@ export default function ConnectionSettings() {
   const [discordConnected, setDiscordConnected] = useState(false);
   const [discordOauth, setDiscordOauth] = useState(false);
   const [discordVoice, setDiscordVoice] = useState(false);
+  const [privateVoiceReady, setPrivateVoiceReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<'riot' | 'discord' | null>(null);
   const [message, setMessage] = useState('');
@@ -43,6 +44,7 @@ export default function ConnectionSettings() {
         if (discord?.connected) {
           setDiscordUsername(discord.discordUsername ?? '');
           setDiscordConnected(true);
+          setPrivateVoiceReady(Boolean(discord.metadata?.oauth && discord.metadata?.guildMember));
         }
       })
       .finally(() => setLoading(false));
@@ -79,6 +81,7 @@ export default function ConnectionSettings() {
     try {
       const res = await saveDiscordConnection({ username: discordUsername });
       setDiscordConnected(true);
+      setPrivateVoiceReady(false);
       setMessage(res.message);
     } catch (error) {
       const detail = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -97,6 +100,7 @@ export default function ConnectionSettings() {
     } else {
       setDiscordConnected(false);
       setDiscordUsername('');
+      setPrivateVoiceReady(false);
     }
     setMessage('');
   };
@@ -193,6 +197,7 @@ export default function ConnectionSettings() {
             {discordConnected && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Conectado</span>
             )}
+            {privateVoiceReady && <span className="rounded-full bg-[#5865F2]/15 px-2 py-0.5 text-xs text-[#aeb5ff]">Voz privada lista</span>}
           </div>
           {discordConnected && (
             <button type="button" onClick={() => handleDisconnect('discord')} className="text-slate-400 hover:text-red-400">
@@ -201,10 +206,11 @@ export default function ConnectionSettings() {
           )}
         </div>
         <p className="text-xs text-slate-500 mb-4">
-          Tu Discord sólo se comparte después del match.{discordVoice ? ' También se creará una invitación temporal al canal de voz.' : ''}
+          Tu contacto sólo se comparte después de un match mutuo.{discordVoice ? ' Si ambos autorizan Discord, q2play crea una sala temporal visible únicamente para ustedes dos.' : ''}
         </p>
-        {discordOauth && <button type="button" onClick={async () => { window.location.href = await getDiscordOauthUrl(); }} className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4752c4]"><ChatCircle className="h-4 w-4" /> Conectar con Discord</button>}
-        {discordOauth && <div className="mb-4 flex items-center gap-3 text-xs text-slate-600"><span className="h-px flex-1 bg-white/10" />o escribe tu usuario<span className="h-px flex-1 bg-white/10" /></div>}
+        {discordOauth && <button type="button" onClick={async () => { window.location.href = await getDiscordOauthUrl(); }} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4752c4]"><ChatCircle className="h-4 w-4" /> Autorizar Discord y activar voz privada</button>}
+        {discordOauth && <p className="mb-4 text-[11px] leading-relaxed text-slate-500">Discord te pedirá permiso para identificar tu cuenta y entrar al servidor q2play. No leemos tus mensajes ni accedemos a tus contactos.</p>}
+        {discordOauth && <div className="mb-4 flex items-center gap-3 text-xs text-slate-600"><span className="h-px flex-1 bg-white/10" />o comparte sólo tu usuario<span className="h-px flex-1 bg-white/10" /></div>}
         <input
           value={discordUsername}
           onChange={(e) => setDiscordUsername(e.target.value)}
@@ -219,7 +225,7 @@ export default function ConnectionSettings() {
           className="gradient-btn flex items-center gap-2 px-5 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
         >
           {saving === 'discord' ? <CircleNotch className="w-4 h-4 animate-spin" /> : <LinkSimple className="w-4 h-4" />}
-          {discordConnected ? 'Actualizar Discord' : 'Conectar Discord'}
+          {discordConnected ? 'Actualizar usuario' : 'Guardar usuario'}
         </button>
       </form>
     </div>

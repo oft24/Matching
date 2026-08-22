@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import matchmaking
 
-app = FastAPI(title="Matching Service", version="1.0.0")
+app = FastAPI(title="q2play Matching Service", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,4 +17,4 @@ app.include_router(matchmaking.router, prefix="/api")
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "matching-python"}
+    return {"status": "ok", "service": "q2play-python"}

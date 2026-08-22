@@ -1,11 +1,11 @@
-# Matching — Plataforma de Matchmaking para Videojuegos
+# q2play — encuentra con quién jugar
 
 > Conecta con jugadores que comparten tus objetivos, rango y estilo de juego.
 
 ## Arquitectura
 
 ```
-matching/
+q2play/
 ├── frontend/          # React 19 + TypeScript + Vite + Tailwind CSS 4
 ├── backend/           # Node.js + Express 5 + Prisma + PostgreSQL
 ├── services/python/   # FastAPI (algoritmo de compatibilidad)
@@ -79,16 +79,19 @@ Servicios:
 
 ## Autenticación
 
-La app inicia **deslogueada** y se entra **con Google**, un solo paso. No hay contraseñas, ni códigos, ni correo que enviar: Google ya garantiza que la dirección es del usuario.
+La app inicia **deslogueada** y permite entrar con correo y contraseña o con Google. Google funciona como registro e inicio de sesión en un solo paso; las cuentas de correo usan hashes bcrypt y nunca guardan la contraseña en texto plano.
 
 ```
-Botón de Google ──> ID token ──> el backend lo verifica ──> sesión iniciada
+Correo + contraseña ──> bcrypt ──> sesión JWT
+Botón de Google ──────> ID token ──> verificación RS256 ──> sesión JWT
 ```
 
-Entrar y registrarse son la misma acción: si el correo no existe se crea la cuenta, y si ya existe **se enlaza** en lugar de duplicarla, para que nadie pierda su perfil, sus amigos ni su historial.
+Con Google, entrar y registrarse son la misma acción: si el correo no existe se crea la cuenta, y si ya existe **se enlaza** en lugar de duplicarla. Crear una cuenta nueva requiere aceptar la versión vigente de Términos, Privacidad y Reglas; la fecha y versión quedan registradas en la cuenta.
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
+| POST | /api/auth/register | Crea una cuenta con correo, contraseña y aceptación legal versionada |
+| POST | /api/auth/login | Inicia sesión con correo y contraseña |
 | POST | /api/auth/google | Canjea el ID token de Google por una sesión |
 | GET | /api/auth/config | Si hay base de datos y Google configurados, y el client id |
 | GET | /api/auth/me | Perfil actual (requiere token) |
@@ -105,14 +108,19 @@ El backend **verifica el token localmente**: descarga las claves públicas de Go
 
 ```
 http://localhost:5173
-https://tu-app.vercel.app
+https://q2play.vercel.app
 ```
 
 5. Copia el **Client ID** a `backend/.env`:
 
 ```env
 GOOGLE_CLIENT_ID="xxxxxxxx.apps.googleusercontent.com"
+GOOGLE_AUTH_ENABLED="true"
 ```
+
+Antes de activar Google, agrega `https://q2play.vercel.app` a los **Authorized
+JavaScript origins** del cliente OAuth. Mientras `GOOGLE_AUTH_ENABLED` no sea
+`true`, q2play oculta ese botón y mantiene disponible el acceso por correo.
 
 > No hace falta el *client secret*: el flujo usa ID tokens, no el intercambio por código. El client id es público y el frontend lo pide a `/api/auth/config`, así que **no** se compila dentro del bundle ni necesita una variable `VITE_`.
 >
@@ -123,6 +131,33 @@ GOOGLE_CLIENT_ID="xxxxxxxx.apps.googleusercontent.com"
 ```bash
 npm run db:verify   # conexión + las 8 tablas esperadas
 ```
+
+## Discord privado por match
+
+q2play usa Discord sólo después de que ambas personas aceptan el match. El flujo OAuth pide `identify` y `guilds.join`, agrega al jugador al servidor mediante el bot y no lee mensajes ni contactos.
+
+La autorización usa PKCE con la aplicación marcada como **Public Client**, así que no se almacena `DISCORD_CLIENT_SECRET`.
+
+1. En Discord Developer Portal, abre la aplicación del bot y activa **Public Client**.
+2. En OAuth2 añade el redirect exacto:
+
+```text
+https://q2play.vercel.app/api/connections/discord/callback
+```
+
+3. Configura estas variables:
+
+```env
+DISCORD_CLIENT_ID="application-id-publico"
+DISCORD_BOT_TOKEN="token-secreto-del-bot"
+DISCORD_GUILD_ID="id-del-servidor"
+DISCORD_CATEGORY_ID="id-de-matches-privados"
+DISCORD_CHANNEL_TTL_HOURS="12"
+DISCORD_REDIRECT_URI="https://q2play.vercel.app/api/connections/discord/callback"
+APP_URL="https://q2play.vercel.app"
+```
+
+Al confirmar un match, ambos usuarios deben haber autorizado Discord. El bot crea una voz `duo-usuario-usuario` con límite de 2, niega `View Channel` a `@everyone`, autoriza sólo a los dos miembros y elimina el canal al cerrar el match o vencer el TTL. La estructura y reglas operativas están en `assets/discord/SERVER_SETUP.md`.
 
 ## Migraciones y despliegue
 
@@ -149,6 +184,6 @@ npm run db:apply --prefix backend   # aplicarlas a mano contra el .env actual
 ## Stack
 
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS 4, Lucide Icons
-- **Backend**: Node.js, Express 5, Prisma, JWT, Google Identity Services
+- **Backend**: Node.js, Express 5, Prisma, JWT, Google Identity Services, Discord OAuth2 PKCE
 - **Base de datos**: PostgreSQL (Neon)
 - **Python**: FastAPI, Pydantic (scoring de compatibilidad)

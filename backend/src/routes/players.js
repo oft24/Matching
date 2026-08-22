@@ -2,22 +2,11 @@ import { Router } from 'express';
 import { prisma } from '../config/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getProfileIconOptions } from '../services/riotService.js';
+import { isAllowedAvatar } from '../utils/avatarValidation.js';
 
 const router = Router();
 
 const USER_FIELDS = { id: true, username: true, email: true, avatar: true, gender: true, level: true, xp: true };
-
-/** Sólo aceptamos iconos servidos por Data Dragon: evita que se guarde una URL arbitraria. */
-const ALLOWED_AVATAR_HOST = 'ddragon.leagueoflegends.com';
-
-function isAllowedAvatar(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && url.hostname === ALLOWED_AVATAR_HOST;
-  } catch {
-    return false;
-  }
-}
 
 /** Catálogo de iconos disponibles para el selector de foto de perfil. */
 router.get('/avatar-options', requireAuth, async (req, res) => {

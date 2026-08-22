@@ -23,6 +23,7 @@ const migrationsDir = join(backendDir, 'prisma', 'migrations');
 const REPEATABLE = [
   '20260815000000_email_verification',
   '20260815120000_google_signin',
+  '20260822000000_social_features_backfill',
 ];
 
 // directUrl evita el pooler: el DDL a través de pgbouncer no es fiable.

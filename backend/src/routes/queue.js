@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { joinQueue, leaveQueue, getQueueStatus, respondToMatch, expireStaleMatches } from '../services/queueService.js';
+import { normalizeQueueFilters } from '../utils/matchingCompatibility.js';
 
 const router = Router();
 
@@ -12,8 +13,12 @@ router.post('/join', async (req, res) => {
     if (!game || !filters) {
       return res.status(400).json({ error: 'Juego y filtros son obligatorios' });
     }
+    const normalizedFilters = normalizeQueueFilters(game, filters, req.user.gender);
+    if (!normalizedFilters.game || !normalizedFilters.preferredGender) {
+      return res.status(400).json({ error: 'Filtros de búsqueda no válidos' });
+    }
     await expireStaleMatches();
-    const result = await joinQueue(req.user.id, game, { ...filters, userGender: req.user.gender });
+    const result = await joinQueue(req.user.id, normalizedFilters.game, normalizedFilters);
     const status = await getQueueStatus(req.user.id);
     res.json({ ...result, ...status });
   } catch (err) {

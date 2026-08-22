@@ -32,12 +32,14 @@ export interface MatchOpponent {
 
 export interface QueueStatus {
   status: 'idle' | 'searching' | 'pending' | 'accepted' | 'rejected' | 'expired';
+  game?: string;
   matchId?: string;
   myAccepted?: boolean;
   opponentAccepted?: boolean;
   opponent?: MatchOpponent | null;
   compatibility?: number;
   discordInviteUrl?: string | null;
+  discordChannelExpiresAt?: string | null;
   expiresAt?: string;
   waitingForOpponent?: boolean;
 }
@@ -67,7 +69,7 @@ export interface UserConnection {
   riotTagLine?: string;
   riotRegion?: string;
   discordUsername?: string;
-  metadata?: { activeGame?: 'lol' | 'valorant'; topChampion?: TopChampion; profileIconUrl?: string; summonerLevel?: number };
+  metadata?: { activeGame?: 'lol' | 'valorant'; topChampion?: TopChampion; profileIconUrl?: string; summonerLevel?: number; oauth?: boolean; guildMember?: boolean };
 }
 
 export interface TopChampion {
@@ -250,7 +252,7 @@ export interface AuthResponse {
 }
 
 export interface GoogleAuthResponse extends AuthResponse {
-  /** true la primera vez que esa cuenta de Google entra en Matching. */
+  /** true la primera vez que esa cuenta de Google entra en q2play. */
   isNew: boolean;
 }
 
@@ -260,4 +262,5 @@ export interface AuthConfig {
   google: boolean;
   /** El client id es público: viaja al navegador para inicializar Google. */
   googleClientId: string | null;
+  termsVersion: string;
 }

@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('matchingDesktop', {
+contextBridge.exposeInMainWorld('q2playDesktop', {
   isDesktop: true,
   platform: process.platform,
   version: process.versions.electron,

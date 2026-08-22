@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 4000;
 async function start() {
   await connectDatabase();
   app.listen(PORT, () => {
-    console.log(`Matching API running on http://localhost:${PORT}`);
+    console.log(`q2play API running on http://localhost:${PORT}`);
   });
   void cleanupExpiredDiscordChannels({ force: true }).catch((error) => {
     console.error('Discord startup cleanup error:', error.message);

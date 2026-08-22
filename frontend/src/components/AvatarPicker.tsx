@@ -1,25 +1,26 @@
-import { useEffect, useState } from 'react';
-import { Check, CircleNotch, Sparkle } from '@phosphor-icons/react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Check, CircleNotch, GameController, Sparkle } from '@phosphor-icons/react';
 import Avatar from './Avatar';
 import { fetchAvatarOptions, saveProfile, type AvatarOptions } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { GAME_AVATARS } from '../data/gameAvatars';
 
 /**
- * Selector de foto de perfil: iniciales, el icono de LoL de la cuenta Riot conectada,
- * o cualquiera del catálogo de iconos de invocador de Data Dragon.
+ * Selector de identidad visual. Los iconos de juego son recursos locales y no
+ * dependen de que el usuario conecte una cuenta externa.
  */
 export default function AvatarPicker() {
   const { user, updateUser } = useAuth();
   const [options, setOptions] = useState<AvatarOptions | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingRemote, setLoadingRemote] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchAvatarOptions()
       .then(setOptions)
-      .catch(() => setError('No se pudo cargar el catálogo de iconos.'))
-      .finally(() => setLoading(false));
+      .catch(() => setError('Los iconos conectados no están disponibles; los iconos de juego sí.'))
+      .finally(() => setLoadingRemote(false));
   }, []);
 
   const choose = async (url: string | null) => {
@@ -39,11 +40,14 @@ export default function AvatarPicker() {
 
   return (
     <section className="mt-6 border-t border-white/[0.08] pt-6">
-      <div className="mb-4 flex items-end justify-between gap-4">
+      <div className="mb-5 flex items-end justify-between gap-4">
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Foto de perfil</h3>
+          <span className="mb-2 inline-flex items-center gap-2 rounded-full border border-brand-violet/25 bg-brand-violet/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-violet-300">
+            <GameController weight="fill" className="h-3.5 w-3.5" /> Sin conectar cuentas
+          </span>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">Tu icono gamer</h3>
           <p className="mt-1 text-xs text-slate-500">
-            Conecta tu Riot ID para usar tu icono de League, o elige uno del catálogo.
+            Elige cualquier juego. Se guarda en tu perfil y aparece en matches, amigos y chat.
           </p>
         </div>
         <Avatar name={user?.username ?? ''} src={current} size={48} brand radius={14} />
@@ -51,14 +55,7 @@ export default function AvatarPicker() {
 
       {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
 
-      {loading ? (
-        <div className="flex gap-2.5">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="skeleton h-14 w-14 rounded-xl" />
-          ))}
-        </div>
-      ) : (
-        <div className="stagger flex flex-wrap gap-2.5">
+      <div className="avatar-game-grid stagger">
           <OptionButton
             label="Usar mis iniciales"
             selected={!current}
@@ -68,7 +65,27 @@ export default function AvatarPicker() {
             <Avatar name={user?.username ?? ''} size={56} brand radius={12} />
           </OptionButton>
 
-          {options?.riot && (
+          {GAME_AVATARS.map((game) => (
+            <OptionButton
+              key={game.id}
+              label={`Usar icono de ${game.name}`}
+              selected={current === game.value}
+              busy={saving === game.value}
+              onClick={() => choose(game.value)}
+            >
+              <img src={game.image ?? undefined} alt="" loading="lazy" className="h-14 w-14 rounded-xl object-cover" />
+              <span className="avatar-game-label" aria-hidden="true">{game.short}</span>
+            </OptionButton>
+          ))}
+      </div>
+
+      {(options?.riot || options?.icons.length) && (
+        <div className="mt-6 border-t border-white/[0.07] pt-5">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+            Opcionales de League of Legends
+          </p>
+          <div className="stagger flex flex-wrap gap-2.5">
+            {options?.riot && (
             <OptionButton
               label={`Icono de LoL · ${options.riot.label}`}
               selected={current === options.riot.url}
@@ -81,9 +98,9 @@ export default function AvatarPicker() {
                 <Sparkle className="h-3 w-3" />
               </span>
             </OptionButton>
-          )}
+            )}
 
-          {options?.icons.map((icon) => (
+            {options?.icons.slice(0, 16).map((icon) => (
             <OptionButton
               key={icon.id}
               label={`Icono ${icon.id}`}
@@ -93,8 +110,15 @@ export default function AvatarPicker() {
             >
               <img src={icon.url} alt="" loading="lazy" className="h-14 w-14 rounded-xl object-cover" />
             </OptionButton>
-          ))}
+            ))}
+          </div>
         </div>
+      )}
+
+      {loadingRemote && (
+        <p className="mt-4 inline-flex items-center gap-2 text-[11px] text-slate-600">
+          <CircleNotch className="h-3.5 w-3.5 animate-spin" /> Cargando opciones conectadas…
+        </p>
       )}
     </section>
   );
@@ -108,7 +132,7 @@ function OptionButton({
   busy: boolean;
   highlight?: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button

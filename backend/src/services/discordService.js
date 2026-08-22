@@ -5,6 +5,11 @@ const DEFAULT_TTL_HOURS = 12;
 const MAX_TTL_HOURS = 24 * 7;
 const REQUEST_TIMEOUT_MS = 4000;
 const CLEANUP_INTERVAL_MS = 60 * 1000;
+const VIEW_CHANNEL = 1n << 10n;
+const CONNECT = 1n << 20n;
+const SPEAK = 1n << 21n;
+const USE_VAD = 1n << 25n;
+const PRIVATE_VOICE_ALLOW = String(VIEW_CHANNEL | CONNECT | SPEAK | USE_VAD);
 
 let lastCleanupAt = 0;
 
@@ -50,6 +55,26 @@ export function isDiscordVoiceConfigured() {
   return Boolean(process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_GUILD_ID);
 }
 
+function safeChannelPart(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 18);
+}
+
+export async function addDiscordGuildMember(discordUserId, accessToken) {
+  if (!isDiscordVoiceConfigured() || !discordUserId || !accessToken) return false;
+  const response = await discordRequest(`/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}`, {
+    method: 'PUT',
+    headers: { 'X-Audit-Log-Reason': 'q2play connected Discord account' },
+    body: JSON.stringify({ access_token: accessToken }),
+  });
+  return response.ok;
+}
+
 export function getDiscordChannelMetadata(match) {
   const metadata = record(record(match?.filters).discord);
   if (!metadata.channelId) return null;
@@ -67,26 +92,46 @@ export async function deleteDiscordChannel(channelId) {
   if (!isDiscordVoiceConfigured() || !channelId) return false;
   const response = await discordRequest(`/channels/${channelId}`, {
     method: 'DELETE',
-    headers: { 'X-Audit-Log-Reason': 'Matching temporary voice channel expired' },
+    headers: { 'X-Audit-Log-Reason': 'q2play temporary voice channel expired' },
   });
   return response.ok || response.status === 404;
 }
 
-export async function provisionDiscordChannel(match) {
+export async function provisionDiscordChannel(match, { memberIds = [], playerNames = [] } = {}) {
   if (!isDiscordVoiceConfigured()) return null;
+
+  const uniqueMemberIds = [...new Set(memberIds.map(String).filter(Boolean))];
+  // Sin las dos identidades verificadas no hay forma de prometer una sala
+  // realmente privada. El chat interno sigue disponible como alternativa.
+  if (uniqueMemberIds.length !== 2) return null;
 
   const hours = ttlHours();
   const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
   let channelId = null;
 
   try {
+    const personalName = playerNames.map(safeChannelPart).filter(Boolean).slice(0, 2).join('-');
     const channelResponse = await discordRequest(`/guilds/${process.env.DISCORD_GUILD_ID}/channels`, {
       method: 'POST',
-      headers: { 'X-Audit-Log-Reason': `Matching voice channel for ${match.id}` },
+      headers: { 'X-Audit-Log-Reason': `q2play voice channel for ${match.id}` },
       body: JSON.stringify({
-        name: `matching-${match.id.slice(-8).toLowerCase()}`,
+        name: `duo-${personalName || match.id.slice(-8).toLowerCase()}`.slice(0, 90),
         type: 2,
         user_limit: 2,
+        permission_overwrites: [
+          {
+            id: String(process.env.DISCORD_GUILD_ID),
+            type: 0,
+            allow: '0',
+            deny: String(VIEW_CHANNEL),
+          },
+          ...uniqueMemberIds.map((id) => ({
+            id,
+            type: 1,
+            allow: PRIVATE_VOICE_ALLOW,
+            deny: '0',
+          })),
+        ],
         ...(process.env.DISCORD_CATEGORY_ID ? { parent_id: process.env.DISCORD_CATEGORY_ID } : {}),
       }),
     });
@@ -95,7 +140,7 @@ export async function provisionDiscordChannel(match) {
 
     const inviteResponse = await discordRequest(`/channels/${channelId}/invites`, {
       method: 'POST',
-      headers: { 'X-Audit-Log-Reason': `Matching invite for ${match.id}` },
+      headers: { 'X-Audit-Log-Reason': `q2play invite for ${match.id}` },
       body: JSON.stringify({
         max_age: hours * 60 * 60,
         max_uses: 2,
@@ -110,6 +155,7 @@ export async function provisionDiscordChannel(match) {
       channelId: String(channelId),
       inviteUrl: `https://discord.gg/${inviteCode}`,
       expiresAt: expiresAt.toISOString(),
+      privateFor: uniqueMemberIds.length,
     };
   } catch (error) {
     console.error('Discord channel provisioning error:', error.message);
